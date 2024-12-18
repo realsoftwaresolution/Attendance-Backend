@@ -3,6 +3,7 @@ const { secret } = require("../config/jwt.config");
 const  db = require("../models"); // Import the model
 const { hashPassword, comparePassword } = require("../utils/hash.util");
 const { Op } = require("sequelize");
+const upload = require('../middlewares/upload.middleware'); // Ensure you have the multer middleware
 
 // Admin Registration
 exports.register = async (req, res) => {
@@ -93,38 +94,184 @@ exports.login = async (req, res) => {
 
 // Create Employee
 exports.createEmployee = async (req, res) => {
-    try {
-      // Check if the logged-in user has the admin role
-      if (req.user.UserType !== 'Admin') {
-        return res.status(403).json({ error: 'You do not have permission to create an employee' });
-      }
-  
-      // Proceed with employee creation if user is admin
-      const { name, empPassword, empType } = req.body;
-  
-      // Hash the password before saving
-      const hashedPassword = await hashPassword(empPassword);
-  
-      // Create the new employee
-      const employee = await db.EmployeeMst.create({
-        EmpName: name,
-        EmpType: empType,
-        EmpPassword: hashedPassword,
-      });
-  
-      // Respond with the created employee
-      return res.status(201).json(employee);
-    } catch (err) {
-      return res.status(500).json({ error: err.message });
+  try {
+    // Check if the logged-in user has the admin role
+    if (req.user.UserType !== 'Admin') {
+      return res.status(403).json({ error: 'You do not have permission to create an employee' });
     }
-  };
+
+    // Destructure and validate the request body
+    const {
+      empFullName,
+      empUsername,
+      empPassword,
+      empType,
+      empBranch,
+      empDepartment,
+      empBankFullName,
+      empDesignation,
+      empFirm,
+      empSalary,
+      empPhoneNo,
+      empBankName,
+      empBankACNo,
+      empBankIFSCode,
+      empSalaryType,
+      empCode,
+      empPANNo,
+      empESINo,
+      empAddress,
+      dateOfJoining,
+      sDate,
+      logId,
+      pcId,
+      ever,
+      companyCode,
+      sortId,
+    } = req.body;
+
+    // Hash the password before saving
+    const hashedPassword = await hashPassword(empPassword);
+
+    // Extract file paths from multer's response
+    const imagePaths = req.files.images?.map((file) => file.path);
+    const documentPaths = req.files.documents?.map((file) => file.path);
+
+    console.log(req.files.images); // To see the image file paths
+    console.log(req.files.documents); // To see the document file paths
+
+    const existingUser = await db.EmployeeMst.findOne({
+      where: { EmpUsername: empUsername },
+    });
+    if (existingUser) {
+      return res.status(400).json({ message: "Username already exists" });
+    }
+
+    // Create the new employee
+    const employee = await db.EmployeeMst.create({
+      EmpFullName: empFullName,
+      EmpUsername: empUsername,
+      EmpPassword: hashedPassword,
+      EmpType: empType,
+      EmpBranch: empBranch,
+      EmpDepartment: empDepartment,
+      EmpBankFullName: empBankFullName,
+      EmpDesignation: empDesignation,
+      EmpFirm: empFirm,
+      EmpSalary: empSalary,
+      EmpPhoneNo: empPhoneNo,
+      EmpBankName: empBankName,
+      EmpBankACNo: empBankACNo,
+      EmpBankIFSCode: empBankIFSCode,
+      EmpSalaryType: empSalaryType,
+      EmpCode: empCode,
+      EmpPANNo: empPANNo,
+      EmpESINo: empESINo,
+      EmpAddress: empAddress,
+      DateOfJoinng: dateOfJoining,
+      ImagePaths: imagePaths,
+      DocumentPaths: documentPaths,
+      EmpGrp: empDepartment,
+      Sflag: 'I',
+      SDate: sDate,
+      LogID: logId,
+      PcID: pcId,
+      Ever: ever,
+      CompanyCode: companyCode,
+      SortId: sortId,
+      Active: true,
+      IsDelete: false,
+    });
+
+    // Respond with the created employee
+    return res.status(201).json({
+      message: 'Employee created successfully',
+      employee,
+    });
+  } catch (err) {
+    console.log('Error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getAllEmployees = async (req, res) => {
+  try {
+    // Check if the logged-in user has the admin role
+    if (req.user.UserType !== 'Admin') {
+      return res.status(403).json({ error: 'You do not have permission to view employees' });
+    }
+
+    // Fetch all employees from the database
+    const employees = await db.EmployeeMst.findAll({
+      where: {
+        IsDelete: false, // Only fetch employees that are not marked as deleted
+      },
+      attributes: [
+        'EmpFullName', 'EmpUsername', 'EmpType', 'EmpBranch', 'EmpDepartment', 'EmpFirm', 'EmpDesignation',
+        'EmpSalary', 'EmpPhoneNo', 'EmpBankName', 'EmpBankACNo', 'EmpBankIFSCode',
+        'EmpSalaryType', 'EmpCode', 'EmpPANNo', 'EmpESINo', 'EmpAddress', 'DateOfJoinng',
+        'ImagePaths', 'DocumentPaths', 'EmpGrp', 'Sflag', 'SDate', 'LogID', 'PcID', 'Ever',
+        'CompanyCode', 'SortId', 'Active',
+      ]
+    });
+
+    // Check if no employees found
+    if (employees.length === 0) {
+      return res.status(404).json({ message: 'No employees found' });
+    }
+
+    // Respond with the list of employees
+    return res.status(200).json({
+      message: 'Employees fetched successfully',
+      employees,
+    });
+  } catch (err) {
+    console.log('Error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
 
 // Update Employee
+// exports.updateEmployee = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     await Employee.update(req.body, { where: { id } });
+//     return res.json({ message: "Employee updated successfully" });
+//   } catch (err) {
+//     return res.status(500).json({ error: err.message });
+//   }
+// };
+
+
 exports.updateEmployee = async (req, res) => {
   try {
     const { id } = req.params;
-    await Employee.update(req.body, { where: { id } });
-    return res.json({ message: "Employee updated successfully" });
+    
+    // Check if the logged-in user has the admin role
+    if (req.user.UserType !== 'Admin') {
+      return res.status(403).json({ error: 'You do not have permission to update an employee' });
+    }
+
+    // Proceed with employee update
+    const { EmpName, EmpType, EmpGrp, Sflag, Active } = req.body;
+
+    // Check if the employee exists
+    const employee = await db.EmployeeMst.findByPk(id);
+    if (!employee) {
+      return res.status(404).json({ error: "Employee not found" });
+    }
+
+    // Update the employee fields
+    await employee.update({
+      EmpName,
+      EmpType,
+      EmpGrp,
+      Sflag,
+      Active,
+    });
+
+    return res.json({ message: "Employee updated successfully", employee });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

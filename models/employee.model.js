@@ -5,9 +5,26 @@ module.exports = employeeMstModel;
 function employeeMstModel(sequelize) {
     const attributes = {
         EmpMstId: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-        EmpName: { type: DataTypes.STRING(30) },
+        EmpFullName: { type: DataTypes.STRING() },
+        EmpUsername: { type: DataTypes.STRING(30) },
         EmpPassword: { type: DataTypes.STRING() },
         EmpType: { type: DataTypes.STRING(10) },
+        EmpBranch: { type: DataTypes.STRING(10) },
+        EmpDepartment: { type: DataTypes.STRING(10) },
+        EmpBankFullName: { type: DataTypes.STRING() },
+        EmpDesignation: { type: DataTypes.STRING(10) },
+        EmpFirm: { type: DataTypes.STRING(10) },
+        EmpSalary: { type: DataTypes.DECIMAL(18, 2) },
+        EmpPhoneNo: { type: DataTypes.STRING(20) },
+        EmpBankName: { type: DataTypes.STRING() },
+        EmpBankACNo: { type: DataTypes.STRING() },
+        EmpBankIFSCode: { type: DataTypes.STRING(30) },
+        EmpSalaryType: { type: DataTypes.STRING(30) },
+        EmpCode: { type: DataTypes.STRING(10) },
+        EmpPANNo: { type: DataTypes.STRING(30) },
+        EmpESINo: { type: DataTypes.STRING(10) },
+        EmpAddress: { type: DataTypes.STRING() },
+        DateOfJoinng: {type: DataTypes.DATEONLY},
         EmpGrp: { type: DataTypes.CHAR(5), allowNull: true },
         Sflag: { type: DataTypes.CHAR(1), allowNull: true },
         SDate: { type: DataTypes.STRING, allowNull: true },
@@ -20,6 +37,9 @@ function employeeMstModel(sequelize) {
         IsDelete: { type: DataTypes.BOOLEAN, allowNull: true },
         EmpToken: { type: DataTypes.STRING(), allowNull: true },
         EmpTokenCreatedDate: { type: DataTypes.STRING, allowNull: true },
+        ImagePaths: { type: DataTypes.TEXT, allowNull: true }, // Array of image paths as JSON string
+        DocumentPaths: { type: DataTypes.TEXT, allowNull: true }, // Array of document paths as JSON string
+        
     };
 
     const options = {
