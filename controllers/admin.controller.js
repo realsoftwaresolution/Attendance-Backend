@@ -69,7 +69,7 @@ exports.login = async (req, res) => {
         Username: user.Username,
         UserType: user.UserType,
       };
-      const token = jwt.sign(tokenPayload, secret, { expiresIn: "1h" });
+      const token = jwt.sign(tokenPayload, secret, { expiresIn: "7d" });
   
       // Update token and timestamp in database
       user.Token = token;
@@ -128,24 +128,35 @@ exports.createEmployee = async (req, res) => {
       ever,
       companyCode,
       sortId,
+      empFaceData,
     } = req.body;
+
+    // Ensure that all required fields are provided
+    const requiredFields = [
+      empFullName, empUsername, empPassword, empType, empBranch, empDepartment,
+      empBankFullName, empDesignation, empFirm, empSalary, empPhoneNo, empBankName,
+      empBankACNo, empBankIFSCode, empSalaryType, empCode, empPANNo, empESINo,
+      empAddress, dateOfJoining, sDate, logId, pcId, ever, companyCode, sortId, empFaceData
+    ];
+
+    for (let field of requiredFields) {
+      if (!field) {
+        return res.status(400).json({ error: 'Missing required field' });
+      }
+    }
 
     // Hash the password before saving
     const hashedPassword = await hashPassword(empPassword);
 
-    // Extract file paths from multer's response
-    const imagePaths = req.files.images?.map((file) => file.path);
-    const documentPaths = req.files.documents?.map((file) => file.path);
-
-    console.log(req.files.images); // To see the image file paths
-    console.log(req.files.documents); // To see the document file paths
-
-    const existingUser = await db.EmployeeMst.findOne({
-      where: { EmpUsername: empUsername },
-    });
-    if (existingUser) {
-      return res.status(400).json({ message: "Username already exists" });
-    }
+    // Extract file paths from multer's response and serialize them as JSON strings
+    // const imagePaths = req.files?.images ? JSON.stringify(req.files.images.map((file) => file.path)) : null;
+    const documentPaths = req.files?.documents ? JSON.stringify(req.files.documents.map((file) => file.path)) : null;
+    const faceData = JSON.stringify(empFaceData);
+    // Check if username already exists
+    // const existingUser = await db.EmployeeMst.findOne({ where: { EmpUsername: empUsername } });
+    // if (existingUser) {
+    //   return res.status(400).json({ message: "User already exists" });
+    // }
 
     // Create the new employee
     const employee = await db.EmployeeMst.create({
@@ -169,7 +180,7 @@ exports.createEmployee = async (req, res) => {
       EmpESINo: empESINo,
       EmpAddress: empAddress,
       DateOfJoinng: dateOfJoining,
-      ImagePaths: imagePaths,
+      EmpFaceData: faceData,
       DocumentPaths: documentPaths,
       EmpGrp: empDepartment,
       Sflag: 'I',
@@ -194,6 +205,86 @@ exports.createEmployee = async (req, res) => {
   }
 };
 
+exports.addHoursCategory = async (req, res) => {
+  try {
+    // Check if the logged-in user has the admin role
+    console.log('Started:');
+    if (req.user.UserType !== 'Admin') {
+      return res.status(403).json({ error: 'You do not have permission to add a Hours Category' });
+    }
+    console.log('Validated Admin User:');
+    // Destructure and validate the request body
+    const {
+      code,
+      hours,
+      sDate,
+      logId,
+      pcId,
+      ever,
+      companyCode,
+      sortId,
+    } = req.body;
+
+    // Ensure that all required fields are provided
+    const requiredFields = [
+      code, hours, sDate, logId, pcId, ever, companyCode, sortId
+    ];
+
+    for (let field of requiredFields) {
+      if (!field) {
+        return res.status(400).json({ error: 'Missing required field' });
+      }
+    }
+
+    console.log('Validated Params:');
+
+
+    // Hash the password before saving
+    // const hashedPassword = await hashPassword(empPassword);
+
+    // Extract file paths from multer's response and serialize them as JSON strings
+    // const imagePaths = req.files?.images ? JSON.stringify(req.files.images.map((file) => file.path)) : null;
+    // const documentPaths = req.files?.documents ? JSON.stringify(req.files.documents.map((file) => file.path)) : null;
+
+    // Check if username already exists
+    const existingEntry = await db.HoursCategoryMst.findOne({ where: { Code: code } });
+    if (existingEntry) {
+      return res.status(400).json({ message: "Code already exists" });
+    }
+
+    console.log('Checked Existing Entry:');
+
+
+    // Create the new employee
+    const entry = await db.HoursCategoryMst.create({
+      Code: code,
+      Hours: hours,
+      Sflag: 'I',
+      SDate: sDate,
+      LogID: logId,
+      PcID: pcId,
+      Ever: ever,
+      CompanyCode: companyCode,
+      SortId: sortId,
+      Active: true,
+      IsDelete: false,
+    });
+
+    console.log('Entry Added:');
+
+
+    // Respond with the created employee
+    return res.status(201).json({
+      message: 'Hours Category added successfully',
+      entry,
+    });
+  } catch (err) {
+    console.log('Error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+
 exports.getAllEmployees = async (req, res) => {
   try {
     // Check if the logged-in user has the admin role
@@ -207,23 +298,175 @@ exports.getAllEmployees = async (req, res) => {
         IsDelete: false, // Only fetch employees that are not marked as deleted
       },
       attributes: [
-        'EmpFullName', 'EmpUsername', 'EmpType', 'EmpBranch', 'EmpDepartment', 'EmpFirm', 'EmpDesignation',
+        'EmpMstId','EmpFullName', 'EmpUsername', 'EmpType', 'EmpBranch', 'EmpDepartment', 'EmpFirm', 'EmpDesignation',
         'EmpSalary', 'EmpPhoneNo', 'EmpBankName', 'EmpBankACNo', 'EmpBankIFSCode',
         'EmpSalaryType', 'EmpCode', 'EmpPANNo', 'EmpESINo', 'EmpAddress', 'DateOfJoinng',
-        'ImagePaths', 'DocumentPaths', 'EmpGrp', 'Sflag', 'SDate', 'LogID', 'PcID', 'Ever',
+        'DocumentPaths', 'EmpGrp', 'Sflag', 'SDate', 'LogID', 'PcID', 'Ever',
         'CompanyCode', 'SortId', 'Active',
       ]
     });
 
     // Check if no employees found
-    if (employees.length === 0) {
-      return res.status(404).json({ message: 'No employees found' });
-    }
+    // if (employees.length === 0) {
+    //   return res.status(404).json({ message: 'No employees found' });
+    // }
 
     // Respond with the list of employees
     return res.status(200).json({
-      message: 'Employees fetched successfully',
+      message: 'Employees fetched successfully.',
       employees,
+    });
+  } catch (err) {
+    console.log('Error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+
+exports.getAllFaceEmployees = async (req, res) => {
+  try {
+    // Check if the logged-in user has the admin role
+    if (req.user.UserType !== 'Admin') {
+      return res.status(403).json({ error: 'You do not have permission to view employees' });
+    }
+
+    // Fetch all employees from the database
+    const employees = await db.EmployeeMst.findAll({
+      where: {
+        IsDelete: false, // Only fetch employees that are not marked as deleted
+      },
+      attributes: [
+        'EmpMstId','EmpUsername','EmpFaceData'
+      ]
+    });
+
+    // Check if no employees found
+    // if (employees.length === 0) {
+    //   return res.status(404).json({ message: 'No employees found' });
+    // }
+
+    // Respond with the list of employees
+    return res.status(200).json({
+      message: 'Employees Face fetched successfully',
+      employees,
+    });
+  } catch (err) {
+    console.log('Error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getAllHoursCategory = async (req, res) => {
+  try {
+    // Check if the logged-in user has the admin role
+    if (req.user.UserType !== 'Admin') {
+      return res.status(403).json({ error: 'You do not have permission to view employees' });
+    }
+
+    // Fetch all employees from the database
+    const entry = await db.HoursCategoryMst.findAll({
+      where: {
+        IsDelete: false, // Only fetch entry that are not marked as deleted
+      }
+    });
+    return res.status(200).json({
+      message: 'Hours Category fetched successfully',
+      entry,
+    });
+  } catch (err) {
+    console.log('Error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getAllHoliday = async (req, res) => {
+  try {
+    // Check if the logged-in user has the admin role
+    if (req.user.UserType !== 'Admin') {
+      return res.status(403).json({ error: 'You do not have permission to view employees' });
+    }
+
+    // Fetch all employees from the database
+    const entry = await db.HolidayMst.findAll({
+      where: {
+        IsDelete: false, // Only fetch entry that are not marked as deleted
+      }
+    });
+    return res.status(200).json({
+      message: 'Holiday fetched successfully',
+      entry,
+    });
+  } catch (err) {
+    console.log('Error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+
+exports.getAllDesignation = async (req, res) => {
+  try {
+    // Check if the logged-in user has the admin role
+    if (req.user.UserType !== 'Admin') {
+      return res.status(403).json({ error: 'You do not have permission to view employees' });
+    }
+
+    // Fetch all employees from the database
+    const entry = await db.DesignationMst.findAll({
+      where: {
+        IsDelete: false, // Only fetch entry that are not marked as deleted
+      }
+    });
+    return res.status(200).json({
+      message: 'Designation fetched successfully',
+      entry,
+    });
+  } catch (err) {
+    console.log('Error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+
+exports.getAllDepartment = async (req, res) => {
+  try {
+    // Check if the logged-in user has the admin role
+    if (req.user.UserType !== 'Admin') {
+      return res.status(403).json({ error: 'You do not have permission to view employees' });
+    }
+
+    // Fetch all employees from the database
+    const entry = await db.DepartmentMst.findAll({
+      where: {
+        IsDelete: false, // Only fetch entry that are not marked as deleted
+      }
+    });
+    return res.status(200).json({
+      message: 'Department fetched successfully',
+      entry,
+    });
+  } catch (err) {
+    console.log('Error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+
+exports.getAllFirm = async (req, res) => {
+  try {
+    // Check if the logged-in user has the admin role
+    if (req.user.UserType !== 'Admin') {
+      return res.status(403).json({ error: 'You do not have permission to view employees' });
+    }
+
+    // Fetch all employees from the database
+    const entry = await db.FirmMst.findAll({
+      where: {
+        IsDelete: false, // Only fetch entry that are not marked as deleted
+      }
+    });
+    return res.status(200).json({
+      message: 'Firm fetched successfully',
+      entry,
     });
   } catch (err) {
     console.log('Error:', err);

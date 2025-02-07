@@ -8,9 +8,22 @@ const storage = multer.diskStorage({
         cb(null, './uploads'); // Directory to store uploaded files
     },
     filename: (req, file, cb) => {
+        // Get username from request (assuming it's passed in req.body or req.user)
+        const username = req.body.empUsername || req.user.username;  // Adjust based on where the username is stored
+
+        // Ensure the username is sanitized to avoid illegal characters in the filename
+        const sanitizedUsername = username.replace(/[^a-z0-9]/gi, '_').toLowerCase(); 
+
+        // Create a unique suffix for the filename
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        console.log(`Uploading file: ${file.originalname}, Unique filename: ${uniqueSuffix}-${file.originalname}`);
-        cb(null, `${uniqueSuffix}-${file.originalname}`);
+
+        // Construct the filename with username and unique suffix
+        const filename = `${sanitizedUsername}-${uniqueSuffix}-${file.originalname}`;
+        
+        console.log(`Uploading file: ${file.originalname}, Unique filename: ${filename}`);
+        
+        // Save the file with the constructed filename
+        cb(null, filename);
     }
 });
 
@@ -22,9 +35,15 @@ const upload = multer({
         
         const fileTypes = /jpeg|jpg|png|pdf/; // Allowed file extensions
         const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetype = fileTypes.test(file.mimetype);
+        // const mimetype = fileTypes.test(file.mimetype);
 
-        if (extname && mimetype) {
+        // console.log(file.mimetype);
+
+        // console.log(extname);
+        // console.log(mimetype);
+
+
+        if (extname) {
             console.log(`File ${file.originalname} is valid.`);
             return cb(null, true);
         } else {

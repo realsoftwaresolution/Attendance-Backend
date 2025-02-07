@@ -28,7 +28,11 @@ async function initialize() {
         // Import Models
         db.UserMst = require("./user.model.js")(sequelize, Sequelize);
         db.EmployeeMst = require("./employee.model.js")(sequelize, Sequelize);
-        
+        db.HoursCategoryMst = require("./hoursCategory.model.js")(sequelize, Sequelize);
+        db.HolidayMst = require("./holiday.model.js")(sequelize, Sequelize);
+        db.DesignationMst = require("./designation.model.js")(sequelize, Sequelize);
+        db.DepartmentMst = require("./department.model.js")(sequelize, Sequelize);
+        db.FirmMst = require("./firm.model.js")(sequelize, Sequelize);
         // Add more models here as needed
         // db.YourModel = require('./yourModel.js')(sequelize, Sequelize);
 

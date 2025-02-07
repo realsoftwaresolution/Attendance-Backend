@@ -24,7 +24,7 @@ function employeeMstModel(sequelize) {
         EmpPANNo: { type: DataTypes.STRING(30) },
         EmpESINo: { type: DataTypes.STRING(10) },
         EmpAddress: { type: DataTypes.STRING() },
-        DateOfJoinng: {type: DataTypes.DATEONLY},
+        DateOfJoinng: {type: DataTypes.STRING},
         EmpGrp: { type: DataTypes.CHAR(5), allowNull: true },
         Sflag: { type: DataTypes.CHAR(1), allowNull: true },
         SDate: { type: DataTypes.STRING, allowNull: true },
@@ -37,7 +37,7 @@ function employeeMstModel(sequelize) {
         IsDelete: { type: DataTypes.BOOLEAN, allowNull: true },
         EmpToken: { type: DataTypes.STRING(), allowNull: true },
         EmpTokenCreatedDate: { type: DataTypes.STRING, allowNull: true },
-        ImagePaths: { type: DataTypes.TEXT, allowNull: true }, // Array of image paths as JSON string
+        EmpFaceData: { type: DataTypes.TEXT, allowNull: true }, // Array of image paths as JSON string
         DocumentPaths: { type: DataTypes.TEXT, allowNull: true }, // Array of document paths as JSON string
         
     };
@@ -45,13 +45,14 @@ function employeeMstModel(sequelize) {
     const options = {
         defaultScope: {
             // exclude password and Token by default
-            attributes: { exclude: ['EmpPassword', 'EmpToken'] }
+            attributes: { exclude: ['EmpPassword', 'EmpToken', 'EmpFaceData'] }
         },
         scopes: {
             // include hash with this scope
-            withHash: { attributes: {exclude: ['EmpToken']}, },
-            withToken: { attributes: {exclude: ['EmpPassword']}, },
-            withAll: { attributes: {}, }
+            withHash: { attributes: {exclude: ['EmpToken', 'EmpFaceData']}, },
+            withToken: { attributes: {exclude: ['EmpPassword', 'EmpFaceData']}, },
+            withAll: { attributes: {}, },
+            onlyFaceData: { attributes:{include: ['EmpFaceData']},}
 
         }
     };
