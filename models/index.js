@@ -19,6 +19,7 @@ async function initialize() {
             {
                 host: config.host,
                 port: config.port,
+                timezone: '+05:30',
                 dialect: config.dialect,
                 dialectOptions: config.dialectOptions,
                 logging: true, // Disable Sequelize logging for cleaner output
@@ -33,6 +34,10 @@ async function initialize() {
         db.DesignationMst = require("./designation.model.js")(sequelize, Sequelize);
         db.DepartmentMst = require("./department.model.js")(sequelize, Sequelize);
         db.FirmMst = require("./firm.model.js")(sequelize, Sequelize);
+        db.ShiftEntryMst = require("./shift.model.js")(sequelize, Sequelize);
+        db.AttendanceMst = require("./attendance.model.js")(sequelize, Sequelize);
+        db.MasterSettingMst = require("./mastersetting.model.js")(sequelize, Sequelize);
+
         // Add more models here as needed
         // db.YourModel = require('./yourModel.js')(sequelize, Sequelize);
 

@@ -5,7 +5,7 @@ module.exports = hoursCategoryMstModel;
 function hoursCategoryMstModel(sequelize) {
     const attributes = {
         FirmMstId: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-        Code: { type: DataTypes.INTEGER },
+        Code: { type: DataTypes.STRING(30) },
         FirmName: { type: DataTypes.STRING },
         OwnerName: { type: DataTypes.STRING },
         PartnerName: { type: DataTypes.STRING },

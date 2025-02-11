@@ -17,8 +17,11 @@ const storage = multer.diskStorage({
         // Create a unique suffix for the filename
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
 
+        const fileExtension = path.extname(file.originalname);
+
         // Construct the filename with username and unique suffix
-        const filename = `${sanitizedUsername}-${uniqueSuffix}-${file.originalname}`;
+        const filename = `${sanitizedUsername}-${uniqueSuffix}${fileExtension}`;
+
         
         console.log(`Uploading file: ${file.originalname}, Unique filename: ${filename}`);
         

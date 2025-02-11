@@ -1,12 +1,13 @@
 const { DataTypes } = require('sequelize');
 
-module.exports = hoursCategoryMstModel;
+module.exports = departmentMstModel;
 
-function hoursCategoryMstModel(sequelize) {
+function departmentMstModel(sequelize) {
     const attributes = {
         DepartmentMstId: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-        Code: { type: DataTypes.INTEGER },
-        MonthHours: { type: DataTypes.INTEGER },
+        Code: { type: DataTypes.STRING(30) },
+        Department: { type: DataTypes.STRING },
+        MonthHours: {type: DataTypes.STRING },
         Sflag: { type: DataTypes.CHAR(1), allowNull: true },
         SDate: { type: DataTypes.STRING, allowNull: true },
         LogID: { type: DataTypes.INTEGER, allowNull: true },
