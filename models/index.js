@@ -37,6 +37,7 @@ async function initialize() {
         db.ShiftEntryMst = require("./shift.model.js")(sequelize, Sequelize);
         db.AttendanceMst = require("./attendance.model.js")(sequelize, Sequelize);
         db.MasterSettingMst = require("./mastersetting.model.js")(sequelize, Sequelize);
+        db.AttMst = require("./attmst.model.js")(sequelize, Sequelize);
 
         // Add more models here as needed
         // db.YourModel = require('./yourModel.js')(sequelize, Sequelize);

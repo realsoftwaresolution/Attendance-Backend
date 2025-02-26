@@ -1631,51 +1631,123 @@ exports.addAttendance = async (req, res) => {
   }
 };
 
-exports.updateAttendance = async (req, res) => {
+exports.addAttendance1 = async (req, res) => {
   try {
-    // Check if the logged-in user has admin permissions
     if (req.user.UserType !== 'Admin') {
-      return res.status(403).json({ error: 'You do not have permission to update attendance records' });
+      return res.status(403).json({ error: 'You do not have permission to add attendance records' });
     }
 
-    const { id } = req.params; // Assuming attendanceId is passed as a route parameter
     const {
-      inTime,
-      outTime
+      empId,
+      department,
+      shift,
+      time,
+      date,
+      sDate,
+      logId,
+      pcId,
+      ever,
+      companyCode,
+      sortId
     } = req.body;
 
-    // Ensure the attendance record exists
-    const attendance = await db.AttendanceMst.findByPk(id);
-    if (!attendance) {
-      return res.status(404).json({ error: 'Attendance record not found' });
+    if (!empId || !department || !shift || !date || !time) {
+      return res.status(400).json({ error: 'Missing required field' });
     }
 
+    const currentDate = moment(date, 'DD-MM-YYYY').format('YYYY-MM-DD');
+    const yesterdayDate = moment(date, 'DD-MM-YYYY').subtract(1, 'days').format('YYYY-MM-DD');
 
-    // Update the attendance record
-    await attendance.update({
-      EmpId: attendance.EmpId,
-      Department: attendance.Department,
-      Shift: attendance.Shift,
-      InTime: inTime ?? attendance.InTime,
-      OutTime: outTime ?? attendance.OutTime,
-      IsPresent: attendance.IsPresent,
-      IsHalfDay: attendance.IsHalfDay,
-      Date: attendance.Date,
-      Overtime: attendance.Overtime,
-      OnLeave: attendance.OnLeave,
-      TotalHours: attendance.TotalHours,
-      Sflag: 'U', // Marking as updated
-      SDate: attendance.SDate,
-      LogID: attendance.LogID,
-      PcID: attendance.PcID,
-      Ever: attendance.Ever,
-      CompanyCode: attendance.CompanyCode,
-      SortId: attendance.SortId,
+    // Check if yesterday's entry exists without an outTime
+    const yesterdayEntry = await db.AttendanceMst.findOne({
+      where: {
+        EmpId: empId,
+        Date: yesterdayDate,
+        OutTime: null,
+        IsDelete: false,
+      },
     });
 
-    return res.status(200).json({
-      message: 'Attendance updated successfully',
-      attendance,
+    let warningMessage = null;
+    if (yesterdayEntry) {
+      warningMessage = "Yesterday's out time is missing. Please update it.";
+    }
+
+    // Find the last attendance entry for today
+    const lastEntry = await db.AttendanceMst.findOne({
+      where: {
+        EmpId: empId,
+        Date: currentDate,
+        IsDelete: false,
+      },
+      order: [['InTime', 'DESC']], // Get the latest entry
+    });
+
+    if (lastEntry) {
+      if (!lastEntry.OutTime) {
+        // If last entry has no OutTime, update it
+        lastEntry.OutTime = time;
+        lastEntry.TotalHours = calculateTotalHours(lastEntry.InTime, time);
+        await lastEntry.save();
+
+        return res.status(200).json({
+          message: 'Out time recorded successfully',
+          entry: lastEntry,
+          warning: warningMessage,
+        });
+      } else {
+        // If last entry has both InTime and OutTime, create a new InTime entry
+        const newEntry = await db.AttendanceMst.create({
+          EmpId: empId,
+          Department: department,
+          Shift: shift,
+          InTime: time,
+          OutTime: null,
+          Date: currentDate,
+          TotalHours: 0,
+          Sflag: 'I',
+          SDate: sDate,
+          LogID: logId,
+          PcID: pcId,
+          Ever: ever,
+          CompanyCode: companyCode,
+          SortId: sortId,
+          Active: true,
+          IsDelete: false,
+        });
+
+        return res.status(201).json({
+          message: 'New in time recorded successfully',
+          entry: newEntry,
+          warning: warningMessage,
+        });
+      }
+    }
+
+    // No entry exists, create first InTime entry for today
+    const newEntry = await db.AttendanceMst.create({
+      EmpId: empId,
+      Department: department,
+      Shift: shift,
+      InTime: time,
+      OutTime: null,
+      Date: currentDate,
+      TotalHours: 0,
+      Sflag: 'I',
+      SDate: sDate,
+      LogID: logId,
+      PcID: pcId,
+      Ever: ever,
+      CompanyCode: companyCode,
+      SortId: sortId,
+      Active: true,
+      IsDelete: false,
+    });
+
+    return res.status(201).json({
+      message: 'In time recorded successfully',
+      entry: newEntry,
+      warning: warningMessage,
     });
 
   } catch (err) {
@@ -1683,6 +1755,135 @@ exports.updateAttendance = async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 };
+
+
+
+// Function to calculate total hours between intime and outtime
+const calculateTotalHours = (inTime, outTime) => {
+  const start = moment(inTime, 'HH:mm:ss');
+  const end = moment(outTime, 'HH:mm:ss');
+  return end.diff(start, 'hours', true); // Returns float value in hours
+};
+
+// exports.updateAttendance = async (req, res) => {
+//   try {
+//     // Check if the logged-in user has admin permissions
+//     if (req.user.UserType !== 'Admin') {
+//       return res.status(403).json({ error: 'You do not have permission to update attendance records' });
+//     }
+
+//     const { id } = req.params; // Assuming attendanceId is passed as a route parameter
+//     const {
+//       inTime,
+//       outTime
+//     } = req.body;
+
+//     // Ensure the attendance record exists
+//     const attendance = await db.AttendanceMst.findByPk(id);
+//     if (!attendance) {
+//       return res.status(404).json({ error: 'Attendance record not found' });
+//     }
+
+
+//     // Update the attendance record
+//     await attendance.update({
+//       EmpId: attendance.EmpId,
+//       Department: attendance.Department,
+//       Shift: attendance.Shift,
+//       InTime: inTime ?? attendance.InTime,
+//       OutTime: outTime ?? attendance.OutTime,
+//       IsPresent: attendance.IsPresent,
+//       IsHalfDay: attendance.IsHalfDay,
+//       Date: attendance.Date,
+//       Overtime: attendance.Overtime,
+//       OnLeave: attendance.OnLeave,
+//       TotalHours: attendance.TotalHours,
+//       Sflag: 'U', // Marking as updated
+//       SDate: attendance.SDate,
+//       LogID: attendance.LogID,
+//       PcID: attendance.PcID,
+//       Ever: attendance.Ever,
+//       CompanyCode: attendance.CompanyCode,
+//       SortId: attendance.SortId,
+//     });
+
+//     return res.status(200).json({
+//       message: 'Attendance updated successfully',
+//       attendance,
+//     });
+
+//   } catch (err) {
+//     console.error('Error:', err);
+//     return res.status(500).json({ error: err.message });
+//   }
+// };
+
+exports.updateAttendance1 = async (req, res) => {
+  try {
+    // Check if the logged-in user has admin permissions
+    if (req.user.UserType !== 'Admin') {
+      return res.status(403).json({ error: 'You do not have permission to update attendance records' });
+    }
+
+    const { id } = req.params; // Attendance ID passed as a route parameter
+    const { inTime, outTime } = req.body;
+
+    // Ensure the attendance record exists
+    const attendance = await db.AttendanceMst.findByPk(id);
+    if (!attendance) {
+      return res.status(404).json({ error: 'Attendance record not found' });
+    }
+
+    const currentDate = moment(attendance.Date, 'YYYY-MM-DD').format('YYYY-MM-DD');
+    const yesterdayDate = moment(attendance.Date, 'YYYY-MM-DD').subtract(1, 'days').format('YYYY-MM-DD');
+
+    // Check if there's an entry from yesterday without an outTime
+    const yesterdayEntry = await db.AttendanceMst.findOne({
+      where: {
+        EmpId: attendance.EmpId,
+        Date: yesterdayDate,
+        OutTime: null,
+        IsDelete: false,
+      },
+    });
+
+    let warningMessage = null;
+    if (yesterdayEntry) {
+      warningMessage = "Yesterday's out time is missing. Please update it.";
+    }
+
+    // If updating outTime, ensure there's a valid InTime
+    if (outTime && !attendance.InTime) {
+      return res.status(400).json({ error: 'Cannot set out time without a valid in time' });
+    }
+
+    // If updating both inTime and outTime, recalculate total hours
+    let totalHours = attendance.TotalHours;
+    if (inTime && outTime) {
+      totalHours = calculateTotalHours(inTime, outTime);
+    } else if (outTime) {
+      totalHours = calculateTotalHours(attendance.InTime, outTime);
+    }
+
+    // Update the attendance record
+    await attendance.update({
+      InTime: inTime ?? attendance.InTime,
+      OutTime: outTime ?? attendance.OutTime,
+      TotalHours: totalHours,
+      Sflag: 'U', // Marking as updated
+    },{ logging: console.log });
+
+    return res.status(200).json({
+      message: 'Attendance updated successfully',
+      attendance,
+      warning: warningMessage,
+    });
+  } catch (err) {
+    console.error('Error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
 
 
 
@@ -1906,6 +2107,164 @@ exports.deleteMasterSetting = async (req, res) => {
 
     return res.json({
       message: 'Master Setting deleted successfully',
+    });
+  } catch (err) {
+    console.log('Error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+exports.addAttMst = async (req, res) => {
+  try {
+    // Check for admin permissions
+    if (req.user.UserType !== 'Admin') {
+      return res.status(403).json({ error: 'You do not have permission to add att mst records' });
+    }
+
+    const attendanceRecords = req.body; // Expecting an array of records
+
+    if (!Array.isArray(attendanceRecords) || attendanceRecords.length === 0) {
+      return res.status(400).json({ error: 'Request body must contain a non-empty array of attendance records' });
+    }
+
+    const entries = []; // To store successfully created entries
+    const errors = [];  // To store errors for specific records
+
+    for (const record of attendanceRecords) {
+      try {
+        const {
+          EmpId: empId,
+          Department: department,
+          Date: date,
+          WorkHours: workHours,
+          WorkH: workH,
+          OTHours: otHours,
+          Work: work,
+          Hoiliday: holiday,
+          OffType: offType,
+          SWork: sWork,
+          LunchBreak: lunchBreak,
+          LastOutTime: lastOutTime,
+          SDate: sDate,
+          LogId: logId,
+          PcId: pcId,
+          Ever: ever,
+          CompanyCode: companyCode,
+          SortId: sortId,
+          InTime1: inTime1,
+          OutTime1: outTime1,
+          InTime2: inTime2,
+          OutTime2: outTime2,
+          InTime3: inTime3,
+          OutTime3: outTime3,
+          InTime4: inTime4,
+          OutTime4: outTime4,
+          InTime5: inTime5,
+          OutTime5: outTime5,
+          InTime6: inTime6,
+          OutTime6: outTime6,
+          InTime7: inTime7,
+          OutTime7: outTime7,
+          InTime8: inTime8,
+          OutTime8: outTime8,
+          InTime9: inTime9,
+          OutTime9: outTime9,
+        } = record;
+
+        // Ensure all required fields are provided
+        if (!empId || !department || !date) {
+          throw new Error('Missing required fields: EmpId, Department, or Date');
+        }
+
+        // Format the date
+        const currentDate = moment(date, 'YYYY-MM-DD').format('YYYY-MM-DD');
+
+        const existingEntry = await db.AttMst.findOne({ where: { AttDate: currentDate, Department: department, EmpId: empId } });
+        if (existingEntry) {
+          await db.AttMst.destroy({ where: { AttDate: currentDate, Department: department, EmpId: empId } });
+        }
+
+        // Create the attendance entry
+        const entry = await db.AttMst.create({
+          AttDate: currentDate,
+          EmpId: empId,
+          Department: department,
+          InTime1: inTime1,
+          OutTime1: outTime1,
+          InTime2: inTime2,
+          OutTime2: outTime2,
+          InTime3: inTime3,
+          OutTime3: outTime3,
+          InTime4: inTime4,
+          OutTime4: outTime4,
+          InTime5: inTime5,
+          OutTime5: outTime5,
+          InTime6: inTime6,
+          OutTime6: outTime6,
+          InTime7: inTime7,
+          OutTime7: outTime7,
+          InTime8: inTime8,
+          OutTime8: outTime8,
+          InTime9: inTime9,
+          OutTime9: outTime9,
+          WorkHours: workHours,
+          WorkH: workH,
+          OTHours: otHours,
+          Work: work,
+          Hoiliday: holiday,
+          OffType: offType,
+          SWork: sWork,
+          LunchBreak: lunchBreak,
+          LastOutTime: lastOutTime,
+          Sflag: 'I',
+          SDate: sDate,
+          LogID: logId,
+          PcID: pcId,
+          Ever: ever,
+          CompanyCode: companyCode,
+          SortId: sortId,
+          Active: true,
+          IsDelete: false,
+        });
+
+        entries.push(entry);
+      } catch (error) {
+        errors.push({
+          record,
+          error: error.message,
+        });
+      }
+    }
+
+    // Send a response summarizing the results
+    return res.status(207).json({
+      message: 'Work Hour Calculated',
+      successCount: entries.length,
+      errorCount: errors.length,
+      errors,
+    });
+  } catch (err) {
+    console.error('Error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getAllAttMst = async (req, res) => {
+  try {
+    // Check if the logged-in user has the admin role
+    if (req.user.UserType !== 'Admin') {
+      return res.status(403).json({ error: 'You do not have permission to view Att Mst' });
+    }
+
+    // Fetch all employees from the database
+    const entry = await db.AttMst.findAll({
+      where: {
+        IsDelete: false, // Only fetch entry that are not marked as deleted
+      }
+    });
+    return res.status(200).json({
+      message: 'Att Mst Data fetched successfully',
+      entry,
     });
   } catch (err) {
     console.log('Error:', err);
