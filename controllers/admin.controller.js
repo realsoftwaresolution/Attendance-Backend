@@ -138,17 +138,16 @@ exports.createEmployee = async (req, res) => {
 
 
     const existingUser = await db.EmployeeMst.findOne({
-      where: { EmpUsername: { [Op.eq]: empUsername } },
+      where: { EmpFullName: { [Op.eq]: empFullName } },
     });
     if (existingUser) {
-      return res.status(400).json({ message: "Username already exists" });
+      return res.status(400).json({ message: "User already exists" });
     }
 
     // Ensure that all required fields are provided
     const requiredFields = [
-      empFullName, empUsername, empPassword, empType, empBranch, empDepartment,
-      empBankFullName, empDesignation, empFirm, empSalary, empPhoneNo, empBankName,
-      empBankACNo, empBankIFSCode, empSalaryType, empCode, empPANNo, empESINo,
+      empFullName, empUsername, empPassword, empType, empBranch, empDepartment, empDesignation, empFirm, empSalary, empPhoneNo,
+      empSalaryType, empCode, empESINo,
       empAddress, dateOfJoining, sDate, logId, pcId, ever, companyCode, sortId, empFaceData
     ];
 
@@ -1871,7 +1870,7 @@ exports.updateAttendance1 = async (req, res) => {
       OutTime: outTime ?? attendance.OutTime,
       TotalHours: totalHours,
       Sflag: 'U', // Marking as updated
-    },{ logging: console.log });
+    }, { logging: console.log });
 
     return res.status(200).json({
       message: 'Attendance updated successfully',
@@ -2103,7 +2102,7 @@ exports.deleteMasterSetting = async (req, res) => {
       return res.status(404).json({ error: "Master Setting Entry not found." });
     }
 
-    await db.MasterSettingMst.destroy({ where: {DepCode: depCode } });
+    await db.MasterSettingMst.destroy({ where: { DepCode: depCode } });
 
     return res.json({
       message: 'Master Setting deleted successfully',
@@ -2265,6 +2264,226 @@ exports.getAllAttMst = async (req, res) => {
     return res.status(200).json({
       message: 'Att Mst Data fetched successfully',
       entry,
+    });
+  } catch (err) {
+    console.log('Error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+exports.calculateSalary = async (req, res) => {
+  let { Month, Year, FirmName, DepartmentName, BranchName } = req.body;
+
+  try {
+    // Convert empty strings and undefined values to NULL
+    FirmName = FirmName?.trim() || null;
+    DepartmentName = DepartmentName?.trim() || null;
+    BranchName = BranchName?.trim() || null;
+
+    // Execute the stored procedure using Sequelize
+    const result = await db.sequelize.query(
+      `EXEC CalculateSalary 
+        @Month = :Month, 
+        @Year = :Year, 
+        @FirmName = :FirmName, 
+        @DepartmentName = :DepartmentName, 
+        @BranchName = :BranchName`,
+      {
+        replacements: { Month, Year, FirmName, DepartmentName, BranchName },
+        type: db.Sequelize.QueryTypes.SELECT,
+      }
+    );
+
+    // Ensure the result is a valid array
+    if (!result || !Array.isArray(result)) {
+      return res.status(500).json({ success: false, message: "Invalid response from stored procedure" });
+    }
+
+    // Format numeric fields (if applicable)
+    const modifiedResult = result.map((item) => ({
+      ...item,
+    }));
+
+    res.status(200).json({ success: true, data: modifiedResult });
+  } catch (error) {
+    console.error("Error executing stored procedure:", error);
+    res.status(500).json({ success: false, message: "Something went wrong", error: error.message });
+  }
+};
+
+
+exports.addSalaryMst = async (req, res) => {
+  try {
+    if (req.user.UserType !== 'Admin') {
+      return res.status(403).json({ error: 'You do not have permission to add salary records' });
+    }
+
+    const { month, department, firm, branch, depositDate, salaries, sDate, logId, pcId, ever, companyCode, sortId } = req.body;
+
+    if (!month || !Array.isArray(salaries) || salaries.length === 0) {
+      return res.status(400).json({ error: 'Missing required fields or invalid salaries data' });
+    }
+
+    const formattedMonth = moment(month, 'MMMM, YYYY').format('YYYY-MM');
+
+    let salaryMst = await db.SalaryMst.findOne({
+      where: { Month: formattedMonth, Department: department, FirmName: firm, BranchName: branch },
+    });
+
+    if (!salaryMst) {
+      salaryMst = await db.SalaryMst.create({
+        Month: formattedMonth,
+        Department: department,
+        FirmName: firm,
+        BranchName: branch,
+        DepositDate: depositDate,
+        Sflag: 'I',
+        SDate: sDate,
+        LogID: logId,
+        PcID: pcId,
+        Ever: ever,
+        CompanyCode: companyCode,
+        SortId: sortId,
+        Active: true,
+        IsDelete: false,
+      });
+    } else {
+      await db.SalaryDetMst.destroy({ where: { SalaryMstId: salaryMst.SalaryMstId } });
+    }
+
+    function roundToTwo(num) {
+      return Math.round((num + Number.EPSILON) * 100) / 100;
+    }
+
+    async function storeSalariesParallel(salaries) {
+      try {
+        await Promise.all(
+          salaries.map(salary =>
+            db.SalaryDetMst.create({
+              SalaryMstId: salaryMst.SalaryMstId,
+              EmployeeCode: salary.EmployeeCode,
+              EmployeeName: salary.EmployeeName,
+              FirmName: salary.FirmName,
+              BranchName: salary.BranchName,
+              Department: salary.Department,
+              DepartmentCode: salary.DepartmentCode,
+              Designation: salary.Designation,
+              BankName: salary.BankName,
+              IFSCCode: salary.IFSCCode,
+              BankAccountNo: salary.BankAccountNo,
+              WorkingHoursPerDay: salary.WorkingHoursPerDay,
+              TotalHours: salary.TotalHours,
+              TotalWorkingDays: salary.TotalWorkingDays,
+              TotalWorkHours: roundToTwo(salary.TotalWorkHours),
+              TotalOvertimeHours: roundToTwo(salary.TotalOvertimeHours),
+              PresentDays: salary.PresentDays,
+              AbsentDays: salary.AbsentDays,
+              HalfDays: salary.HalfDays,
+              LateDays: salary.LateDays,
+              WorkingDays: salary.WorkingDays,
+              BasicSalary: salary.BasicSalary,
+              WorkSalary: roundToTwo(salary.WorkSalary),
+              OTSalary: roundToTwo(salary.OTSalary),
+              SundayOT: roundToTwo(salary.SundayOT),
+              TotalSalary: roundToTwo(salary.TotalSalary),
+              PT: roundToTwo(salary.PT),
+              NetSalary: roundToTwo(salary.NetSalary),
+              Sflag: 'I',
+              SDate: sDate,
+              LogID: logId,
+              PcID: pcId,
+              Ever: ever,
+              CompanyCode: companyCode,
+              SortId: sortId,
+              Active: true,
+              IsDelete: false,
+            })
+          )
+        );
+        console.log('All salaries stored successfully.');
+      } catch (error) {
+        console.error('Error storing salaries:', error);
+      }
+    }
+
+    await storeSalariesParallel(salaries);
+
+    return res.status(201).json({ message: 'Salaries calculation stored successfully' });
+  } catch (err) {
+    console.error('Error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+
+
+exports.getAllSalaryMst = async (req, res) => {
+  try {
+    // Check if the logged-in user has the admin role
+    if (req.user.UserType !== 'Admin') {
+      return res.status(403).json({ error: 'You do not have permission to view Salary Mst' });
+    }
+
+    // Fetch all employees from the database
+    const entry = await db.SalaryMst.findAll({
+      where: {
+        IsDelete: false, // Only fetch entry that are not marked as deleted
+      }
+    });
+    return res.status(200).json({
+      message: 'Salary Mst Data fetched successfully',
+      entry,
+    });
+  } catch (err) {
+    console.log('Error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+
+exports.getAllSalaryDetMst = async (req, res) => {
+  try {
+    // Check if the logged-in user has the admin role
+    if (req.user.UserType !== 'Admin') {
+      return res.status(403).json({ error: 'You do not have permission to view Salary Det Mst' });
+    }
+
+    // Fetch all employees from the database
+    const entry = await db.SalaryDetMst.findAll({
+      where: {
+        IsDelete: false, // Only fetch entry that are not marked as deleted
+      }
+    });
+    return res.status(200).json({
+      message: 'Salary Det Mst Data fetched successfully',
+      entry,
+    });
+  } catch (err) {
+    console.log('Error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+
+
+exports.deleteSalaryMst = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if the logged-in user has the admin role
+    if (req.user.UserType !== 'Admin') {
+      return res.status(403).json({ error: 'You do not have permission to delete Salary Mst' });
+    }
+
+    const entry = await db.SalaryMst.findByPk(id);
+    if (!entry) {
+      return res.status(404).json({ error: "Firm not found" });
+    }
+
+    await entry.destroy();
+
+    return res.json({
+      message: 'Salary Mst deleted successfully',
     });
   } catch (err) {
     console.log('Error:', err);

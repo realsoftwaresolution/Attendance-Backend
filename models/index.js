@@ -38,6 +38,12 @@ async function initialize() {
         db.AttendanceMst = require("./attendance.model.js")(sequelize, Sequelize);
         db.MasterSettingMst = require("./mastersetting.model.js")(sequelize, Sequelize);
         db.AttMst = require("./attmst.model.js")(sequelize, Sequelize);
+        db.SalaryMst = require("./salaryMst.model.js")(sequelize, Sequelize);
+        db.SalaryDetMst = require("./salaryDetMst.model.js")(sequelize, Sequelize);
+
+
+        db.SalaryMst.hasMany(db.SalaryDetMst, { foreignKey: 'SalaryMstId', onDelete: 'CASCADE' });
+        db.SalaryDetMst.belongsTo(db.SalaryMst, { foreignKey: 'SalaryMstId' });      
 
         // Add more models here as needed
         // db.YourModel = require('./yourModel.js')(sequelize, Sequelize);

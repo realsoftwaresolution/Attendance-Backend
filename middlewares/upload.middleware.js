@@ -1,5 +1,6 @@
 const multer = require('multer');
 const path = require('path');
+const { use } = require('../routes/admin.routes');
 
 // Set up storage engine
 const storage = multer.diskStorage({
@@ -9,10 +10,12 @@ const storage = multer.diskStorage({
     },
     filename: (req, file, cb) => {
         // Get username from request (assuming it's passed in req.body or req.user)
-        const username = req.body.empUsername || req.user.username;  // Adjust based on where the username is stored
+        const userID = req.body.empCode;
+        // const userID = req.user.UserMstId;
+        // const username = req.user.Username;  // Adjust based on where the username is stored
 
         // Ensure the username is sanitized to avoid illegal characters in the filename
-        const sanitizedUsername = username.replace(/[^a-z0-9]/gi, '_').toLowerCase(); 
+        // const sanitizedUsername = username.replace(/[^a-z0-9]/gi, '_').toLowerCase(); 
 
         // Create a unique suffix for the filename
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -20,7 +23,7 @@ const storage = multer.diskStorage({
         const fileExtension = path.extname(file.originalname);
 
         // Construct the filename with username and unique suffix
-        const filename = `${sanitizedUsername}-${uniqueSuffix}${fileExtension}`;
+        const filename = `${userID}-${uniqueSuffix}${fileExtension}`;
 
         
         console.log(`Uploading file: ${file.originalname}, Unique filename: ${filename}`);

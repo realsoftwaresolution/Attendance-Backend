@@ -1,0 +1,6 @@
+Berear eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VyTXN0SWQiOjQsIlVzZXJuYW1lIjoiYWRtaW5fdXNlciIsIlVzZXJUeXBlIjoiQWRtaW4iLCJpYXQiOjE3NDIxOTQzODEsImV4cCI6MTc0Mjc5OTE4MX0.YZ-8iT_dqecILySSD0Z6fG8NmZFmys_EaATNvRVtDa4
+Executing (default): EXEC CalculateSalary @Month = N'2', @Year = N'2025', @FirmName = N'', @DepartmentName = N'', @BranchName = N''
+Berear eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VyTXN0SWQiOjQsIlVzZXJuYW1lIjoiYWRtaW5fdXNlciIsIlVzZXJUeXBlIjoiQWRtaW4iLCJpYXQiOjE3NDIxOTQzODEsImV4cCI6MTc0Mjc5OTE4MX0.YZ-8iT_dqecILySSD0Z6fG8NmZFmys_EaATNvRVtDa4
+Executing (default): EXEC CalculateSalary @Month = N'2', @Year = N'2025', @FirmName = N'', @DepartmentName = N'', @BranchName = N''
+Berear eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VyTXN0SWQiOjQsIlVzZXJuYW1lIjoiYWRtaW5fdXNlciIsIlVzZXJUeXBlIjoiQWRtaW4iLCJpYXQiOjE3NDIxOTQzODEsImV4cCI6MTc0Mjc5OTE4MX0.YZ-8iT_dqecILySSD0Z6fG8NmZFmys_EaATNvRVtDa4
+Berear eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VyTXN0SWQiOjQsIlVzZXJuYW1lIjoiYWRtaW5fdXNlciIsIlVzZXJUeXBlIjoiQWRtaW4iLCJpYXQiOjE3NDIxOTQzODEsImV4cCI6MTc0Mjc5OTE4MX0.YZ-8iT_dqecILySSD0Z6fG8NmZFmys_EaATNvRVtDa4
