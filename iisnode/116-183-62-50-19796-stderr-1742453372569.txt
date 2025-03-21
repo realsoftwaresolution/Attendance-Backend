@@ -1,5 +1,0 @@
-(node:19796) Warning: Accessing non-existent property 'use' of module exports inside circular dependency
-(Use `node --trace-warnings ...` to show where the warning was created)
-(node:19796) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
-(node:19796) [DEP0123] DeprecationWarning: Setting the TLS ServerName to an IP address is not permitted by RFC 6066. This will be ignored in a future version.
-(node:19796) [SEQUELIZE0002] DeprecationWarning: The logging-option should be either a function or false. Default: console.log

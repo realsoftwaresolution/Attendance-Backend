@@ -14,6 +14,8 @@ function salaryDetMstModel(sequelize) {
             },
             onDelete: 'CASCADE' // If SalaryMst is deleted, delete related SalaryDetMst records
         },
+        Month: {type: DataTypes.STRING(50), allowNull: true },
+        Year: {type: DataTypes.STRING(50), allowNull: true },
         BranchName: { type: DataTypes.STRING(255), allowNull: true },
         FirmName: { type: DataTypes.STRING(255), allowNull: true },
         EmployeeCode: { type: DataTypes.STRING(50), allowNull: true },

@@ -2363,6 +2363,8 @@ exports.addSalaryMst = async (req, res) => {
               SalaryMstId: salaryMst.SalaryMstId,
               EmployeeCode: salary.EmployeeCode,
               EmployeeName: salary.EmployeeName,
+              Month: salary.Month,
+              Year: salary.Year,
               FirmName: salary.FirmName,
               BranchName: salary.BranchName,
               Department: salary.Department,
