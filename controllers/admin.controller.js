@@ -1942,6 +1942,31 @@ exports.deleteAttendance = async (req, res) => {
   }
 };
 
+exports.deleteAttLog = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if the logged-in user has the admin role
+    if (req.user.UserType !== 'Admin') {
+      return res.status(403).json({ error: 'You do not have permission to delete Attendance' });
+    }
+
+    const entry = await db.AttendanceMst.findByPk(id);
+    if (!entry) {
+      return res.status(404).json({ error: "Attendance Log not found" });
+    }
+
+    await entry.destroy();
+
+    return res.json({
+      message: 'Attendance Log deleted successfully',
+    });
+  } catch (err) {
+    console.log('Error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
 
 exports.getAllMasterSetting = async (req, res) => {
   try {

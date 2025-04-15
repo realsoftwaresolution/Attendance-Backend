@@ -44,6 +44,7 @@ router.put("/attendance/:id", adminController.updateAttendance1);
 router.delete("/employee/:id", adminController.deleteEmployee);
 router.delete("/hours-category/:id", adminController.deleteHoursCategory);
 router.delete("/holiday/:id", adminController.deleteHoliday);
+router.delete("/attendance-log/:id", adminController.deleteAttLog);
 router.delete("/department/:id", adminController.deleteDepartment);
 router.delete("/designation/:id", adminController.deleteDesignation);
 router.delete("/firm/:id", adminController.deleteFirm);
