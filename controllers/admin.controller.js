@@ -7,6 +7,7 @@ const upload = require('../middlewares/upload.middleware'); // Ensure you have t
 const fs = require('fs');
 const path = require('path');
 const moment = require('moment');  // Make sure to install moment.js or use any other library for date manipulation
+const { error } = require("console");
 
 
 
@@ -1566,12 +1567,7 @@ exports.addAttendance = async (req, res) => {
       shift,
       inTime,
       outTime,
-      isPresent,
-      isHalfDay,
       date,
-      overtime,
-      onLeave,
-      totalHours,
       sDate,
       logId,
       pcId,
@@ -1591,23 +1587,23 @@ exports.addAttendance = async (req, res) => {
 
     // Create a new attendance entry
 
-
+    if(inTime && outTime === null){
+      return res.status(400).json({ error: 'InTime/OutTime can not be null' });
+    }
     const currentDate = moment(date, 'DD-MM-YYYY').format('YYYY-MM-DD');
 
+    const processedInTime = inTime === '00:00' ? null : inTime;
+    const processedOutTime = outTime === '00:00' ? null : outTime;
 
+   
 
     const entry = await db.AttendanceMst.create({
       EmpId: empId,
       Department: department,
       Shift: shift,
-      InTime: inTime,
-      OutTime: outTime,
-      IsPresent: isPresent,
-      IsHalfDay: isHalfDay,
+      InTime: processedInTime,
+      OutTime: processedOutTime,
       Date: currentDate,
-      Overtime: overtime,
-      onLeave: onLeave,
-      TotalHours: totalHours,
       Sflag: 'I',
       SDate: sDate,
       LogID: logId,
@@ -1688,7 +1684,7 @@ exports.addAttendance1 = async (req, res) => {
         lastEntry.OutTime = time;
         lastEntry.TotalHours = calculateTotalHours(lastEntry.InTime, time);
         await lastEntry.save();
-
+        logAttendance(empId, 'OUT', time, date);
         return res.status(200).json({
           message: 'Out time recorded successfully',
           entry: lastEntry,
@@ -1714,6 +1710,8 @@ exports.addAttendance1 = async (req, res) => {
           Active: true,
           IsDelete: false,
         });
+
+        logAttendance(empId, 'IN', time, date);
 
         return res.status(201).json({
           message: 'New in time recorded successfully',
@@ -1743,6 +1741,8 @@ exports.addAttendance1 = async (req, res) => {
       IsDelete: false,
     });
 
+    logAttendance(empId, 'IN', time, date);
+
     return res.status(201).json({
       message: 'In time recorded successfully',
       entry: newEntry,
@@ -1754,6 +1754,19 @@ exports.addAttendance1 = async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 };
+
+
+function logAttendance(empCode, status, time, date) {
+  const logDir = path.join(__dirname, 'logs');
+  if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir);
+  }
+
+  const logFile = path.join(logDir, 'attendance-log.txt');
+  const logLine = `${empCode} - ${status} - ${time} - ${date}\n`;
+
+  fs.appendFileSync(logFile, logLine, 'utf8');
+}
 
 
 
@@ -1825,7 +1838,7 @@ exports.updateAttendance1 = async (req, res) => {
     }
 
     const { id } = req.params; // Attendance ID passed as a route parameter
-    const { inTime, outTime } = req.body;
+    let { inTime, outTime } = req.body;
 
     // Ensure the attendance record exists
     const attendance = await db.AttendanceMst.findByPk(id);
@@ -1850,6 +1863,9 @@ exports.updateAttendance1 = async (req, res) => {
     if (yesterdayEntry) {
       warningMessage = "Yesterday's out time is missing. Please update it.";
     }
+    if (outTime === '00:00') {
+      outTime = null;
+    }    
 
     // If updating outTime, ensure there's a valid InTime
     if (outTime && !attendance.InTime) {

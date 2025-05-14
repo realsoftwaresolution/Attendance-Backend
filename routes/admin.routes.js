@@ -18,6 +18,7 @@ router.post("/firm", adminController.addFirm);
 router.post("/shift-entry", adminController.addShiftEntry);
 router.post("/calculate-salary", adminController.calculateSalary);
 router.post("/attendance", adminController.addAttendance1);
+router.post("/attendance-add", adminController.addAttendance);
 router.post("/master-setting", adminController.addMasterSetting);
 router.post("/att-mst", adminController.addAttMst);
 router.post("/save-calculated-salary", adminController.addSalaryMst);
