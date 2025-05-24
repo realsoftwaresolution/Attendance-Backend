@@ -1316,6 +1316,52 @@ exports.getAllHoursCategory = async (req, res) => {
   }
 };
 
+exports.getAllMainMenu = async (req, res) => {
+  try {
+    // Check if the logged-in user has the admin role
+    if (req.user.UserType !== 'Admin') {
+      return res.status(403).json({ error: 'You do not have permission to view Main Menu' });
+    }
+
+    // Fetch all employees from the database
+    const entry = await db.MainMenuMst.findAll({
+      where: {
+        Active: true, // Only fetch entry that are not marked as deleted
+      }
+    });
+    return res.status(200).json({
+      message: 'Main Menu fetched successfully',
+      entry,
+    });
+  } catch (err) {
+    console.log('Error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getAllMenu = async (req, res) => {
+  try {
+    // Check if the logged-in user has the admin role
+    if (req.user.UserType !== 'Admin') {
+      return res.status(403).json({ error: 'You do not have permission to view Menu' });
+    }
+
+    // Fetch all employees from the database
+    const entry = await db.MenuMst.findAll({
+      where: {
+        Active: true, // Only fetch entry that are not marked as deleted
+      }
+    });
+    return res.status(200).json({
+      message: 'Menu fetched successfully',
+      entry,
+    });
+  } catch (err) {
+    console.log('Error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
 exports.getAllHoliday = async (req, res) => {
   try {
     // Check if the logged-in user has the admin role
@@ -2179,6 +2225,8 @@ exports.addAttMst = async (req, res) => {
           WorkHours: workHours,
           WorkH: workH,
           OTHours: otHours,
+          TotalSalary: totalSalary,
+          OTSalary: otSalary,
           Work: work,
           Hoiliday: holiday,
           OffType: offType,
@@ -2251,6 +2299,8 @@ exports.addAttMst = async (req, res) => {
           WorkH: workH,
           OTHours: otHours,
           Work: work,
+          TotalSalary: totalSalary,
+          OTSalary: otSalary,
           Hoiliday: holiday,
           OffType: offType,
           SWork: sWork,

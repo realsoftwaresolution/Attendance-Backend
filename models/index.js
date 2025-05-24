@@ -40,7 +40,8 @@ async function initialize() {
         db.AttMst = require("./attmst.model.js")(sequelize, Sequelize);
         db.SalaryMst = require("./salaryMst.model.js")(sequelize, Sequelize);
         db.SalaryDetMst = require("./salaryDetMst.model.js")(sequelize, Sequelize);
-
+        db.MainMenuMst = require("./mainMenu.model.js")(sequelize, Sequelize);
+        db.MenuMst = require("./menu.model.js")(sequelize, Sequelize);
 
         db.SalaryMst.hasMany(db.SalaryDetMst, { foreignKey: 'SalaryMstId', onDelete: 'CASCADE' });
         db.SalaryDetMst.belongsTo(db.SalaryMst, { foreignKey: 'SalaryMstId' });      

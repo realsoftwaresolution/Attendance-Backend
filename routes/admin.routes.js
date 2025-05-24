@@ -23,6 +23,8 @@ router.post("/master-setting", adminController.addMasterSetting);
 router.post("/att-mst", adminController.addAttMst);
 router.post("/save-calculated-salary", adminController.addSalaryMst);
 router.get("/employee", adminController.getAllEmployees);
+router.get("/main-menu", adminController.getAllMainMenu);
+router.get("/menu", adminController.getAllMenu);
 router.get("/hours-category", adminController.getAllHoursCategory);
 router.get("/employee/faces", adminController.getAllFaceEmployees);
 router.get("/holiday", adminController.getAllHoliday);

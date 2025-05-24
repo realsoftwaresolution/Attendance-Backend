@@ -107,6 +107,8 @@ function attMstModel(sequelize) {
         SWork: { type: DataTypes.STRING, allowNull: true },
         LunchBreak: { type: DataTypes.STRING, allowNull: true },
         LastOutTime: { type: DataTypes.STRING, allowNull: true },
+        TotalSalary: {type: DataTypes.DECIMAL(18,2), allowNull: true},
+        OTSalary: {type: DataTypes.DECIMAL(18,2), allowNull: true},
         Sflag: { type: DataTypes.CHAR(1), allowNull: true },
         SDate: { type: DataTypes.STRING, allowNull: true },
         LogID: { type: DataTypes.INTEGER, allowNull: true },
