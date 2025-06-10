@@ -10,11 +10,10 @@ const moment = require('moment');  // Make sure to install moment.js or use any 
 const { error } = require("console");
 
 
-
 // Admin Registration
 exports.register = async (req, res) => {
   try {
-    const { Username, Password, UserType, UserGrp, CompanyCode } = req.body;
+    const { Username, Password, UserType, UserGrp, CompanyCode, Edit, Delete } = req.body;
 
     // Check for existing user
     const existingUser = await db.UserMst.findOne({
@@ -37,18 +36,68 @@ exports.register = async (req, res) => {
       SDate: new Date().toISOString(), // Current date as ISO string
       CompanyCode: CompanyCode || null,
       Active: true,                  // Default active user
-      IsDelete: false,               // Default not deleted
+      IsDelete: false,
+      Edit_Rights: Edit,
+      Delete_Rights: Delete,               // Default not deleted
     };
 
     // Create the user
-    await db.UserMst.create(newUser);
-
-    return res.status(201).json({ message: "User registered successfully" });
+    var entry = await db.UserMst.create(newUser);
+    return res.status(201).json({ message: "User registered successfully", entry: entry });
   } catch (err) {
     console.error("Registration Error:", err);
     return res.status(500).json({ error: "An error occurred during registration" });
   }
 };
+
+exports.editUser = async (req, res) => {
+  try {
+    const { id } = req.params; // user ID to update
+    const { Username, Password, UserType, UserGrp, CompanyCode, Edit, Delete } = req.body;
+
+    // Find the existing user
+    const user = await db.UserMst.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if username is changing and already taken by another user
+    if (Username && Username !== user.Username) {
+      const existing = await db.UserMst.findOne({
+        where: {
+          Username,
+          UserMstId: { [Op.ne]: id }
+        }
+      });
+      if (existing) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+    }
+
+    // Prepare update fields
+    const updatedFields = {
+      Username,
+      UserType,
+      UserGrp,
+      CompanyCode: CompanyCode || null,
+      Edit_Rights: Edit,
+      Delete_Rights: Delete,
+    };
+
+    // Only hash and update password if it's provided and not empty
+    if (Password && Password.trim() !== '') {
+      updatedFields.Password = await hashPassword(Password);
+    }
+
+    var entry = await user.update(updatedFields);
+
+    return res.status(200).json({ message: "User updated successfully", entry: entry });
+  } catch (err) {
+    console.error("Edit User Error:", err);
+    return res.status(500).json({ error: "An error occurred during user update" });
+  }
+};
+
 
 // Admin Login
 exports.login = async (req, res) => {
@@ -90,6 +139,8 @@ exports.login = async (req, res) => {
         UserMstId: user.UserMstId,
         Username: user.Username,
         UserType: user.UserType,
+        Edit_Rights: user.Edit_Rights,
+        Delete_Rights: user.Delete_Rights,
       },
     });
   } catch (err) {
@@ -401,6 +452,139 @@ exports.deleteUserDocuments = async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 };
+
+exports.deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params; // User ID from URL
+
+    // Check if the user exists
+    const user = await db.UserMst.findByPk(id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Soft delete: mark user as deleted
+    await user.update({
+      IsDelete: true,
+    });
+
+    await db.UserMenuMst.destroy({
+      where: { UserMstId: id },
+    });
+
+    
+    await db.UserReportMst.destroy({
+      where: { UserMstId: id },
+    });
+
+    return res.status(200).json({ message: 'User deleted successfully' });
+  } catch (err) {
+    console.error('Delete User Error:', err);
+    return res.status(500).json({ error: 'An error occurred while deleting the user' });
+  }
+};
+
+
+exports.assignUserPermissions = async (req, res) => {
+  const {
+    userId,
+    selectedMenuIds = [],
+    selectedSubReportTypeIds = []
+  } = req.body;
+
+  try {
+    // Step 1: Verify user exists
+    const user = await db.UserMst.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Step 2: Handle Menu Assignments
+    await db.UserMenuMst.destroy({ where: { UserMstId: userId } });
+
+    if (selectedMenuIds.length > 0) {
+      const menus = await db.MenuMst.findAll({
+        where: { MenuMstId: selectedMenuIds },
+        attributes: ['MenuMstId', 'MainMenuMstId']
+      });
+
+      const menuData = menus.map(menu => ({
+        UserMstId: userId,
+        MenuMstId: menu.MenuMstId,
+        MainMenuMstId: menu.MainMenuMstId
+      }));
+
+      await db.UserMenuMst.bulkCreate(menuData);
+    }
+
+    // Step 3: Handle Report Assignments
+    await db.UserReportMst.destroy({ where: { UserMstId: userId } });
+
+    if (selectedSubReportTypeIds.length > 0) {
+      const subReports = await db.SubReportTypeMst.findAll({
+        where: { SubReportTypeMstId: selectedSubReportTypeIds },
+        attributes: ['SubReportTypeMstId', 'ReportTypeMstId']
+      });
+
+      const reportData = subReports.map(rpt => ({
+        UserMstId: userId,
+        SubReportTypeMstId: rpt.SubReportTypeMstId,
+        ReportTypeMstId: rpt.ReportTypeMstId
+      }));
+
+      await db.UserReportMst.bulkCreate(reportData);
+    }
+
+    return res.status(200).json({
+      message: 'User permissions (menus & reports) assigned successfully'
+    });
+  } catch (err) {
+    console.error('Error assigning user permissions:', err);
+    return res.status(500).json({ error: 'Failed to assign user permissions' });
+  }
+};
+
+exports.getUserPermissions = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Step 1: Verify user exists
+    const user = await db.UserMst.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Step 2: Get assigned menus
+    const menuPermissions = await db.UserMenuMst.findAll({
+      where: { UserMstId: id },
+      attributes: ['MenuMstId', 'MainMenuMstId']
+    });
+
+    // Step 3: Get assigned reports
+    const reportPermissions = await db.UserReportMst.findAll({
+      where: { UserMstId: id },
+      attributes: ['SubReportTypeMstId', 'ReportTypeMstId']
+    });
+
+    const editDeletePermissions = await db.UserMst.findOne({
+      where: { UserMstId: id },
+      attributes: ['Edit_Rights', 'Delete_Rights']
+    });
+
+    return res.status(200).json({
+      message: 'User permissions fetched successfully',
+      menus: menuPermissions,
+      reports: reportPermissions,
+      editDelete: editDeletePermissions
+    });
+  } catch (err) {
+    console.error('Error fetching user permissions:', err);
+    return res.status(500).json({ error: 'Failed to fetch user permissions' });
+  }
+};
+
+
 
 
 
@@ -1339,6 +1523,29 @@ exports.getAllMainMenu = async (req, res) => {
   }
 };
 
+exports.getAllReportType = async (req, res) => {
+  try {
+    // Check if the logged-in user has the admin role
+    if (req.user.UserType !== 'Admin') {
+      return res.status(403).json({ error: 'You do not have permission to view Report Type' });
+    }
+
+    // Fetch all employees from the database
+    const entry = await db.ReportTypeMst.findAll({
+      where: {
+        Active: true, // Only fetch entry that are not marked as deleted
+      }
+    });
+    return res.status(200).json({
+      message: 'Report Type  fetched successfully',
+      entry,
+    });
+  } catch (err) {
+    console.log('Error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
 exports.getAllMenu = async (req, res) => {
   try {
     // Check if the logged-in user has the admin role
@@ -1354,6 +1561,52 @@ exports.getAllMenu = async (req, res) => {
     });
     return res.status(200).json({
       message: 'Menu fetched successfully',
+      entry,
+    });
+  } catch (err) {
+    console.log('Error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getAllUsers = async (req, res) => {
+  try {
+    // Check if the logged-in user has the admin role
+    if (req.user.UserType !== 'Admin') {
+      return res.status(403).json({ error: 'You do not have permission to view Users' });
+    }
+
+    // Fetch all employees from the database
+    const entry = await db.UserMst.findAll({
+      where: {
+        IsDelete: false, // Only fetch entry that are not marked as deleted
+      }
+    });
+    return res.status(200).json({
+      message: 'Users fetched successfully',
+      entry,
+    });
+  } catch (err) {
+    console.log('Error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getAllSubReportType = async (req, res) => {
+  try {
+    // Check if the logged-in user has the admin role
+    if (req.user.UserType !== 'Admin') {
+      return res.status(403).json({ error: 'You do not have permission to view Sub Report Type' });
+    }
+
+    // Fetch all employees from the database
+    const entry = await db.SubReportTypeMst.findAll({
+      where: {
+        Active: true, // Only fetch entry that are not marked as deleted
+      }
+    });
+    return res.status(200).json({
+      message: 'Sub Report Type fetched successfully',
       entry,
     });
   } catch (err) {
@@ -1633,7 +1886,7 @@ exports.addAttendance = async (req, res) => {
 
     // Create a new attendance entry
 
-    if(inTime && outTime === null){
+    if (inTime && outTime === null) {
       return res.status(400).json({ error: 'InTime/OutTime can not be null' });
     }
     const currentDate = moment(date, 'DD-MM-YYYY').format('YYYY-MM-DD');
@@ -1641,7 +1894,7 @@ exports.addAttendance = async (req, res) => {
     const processedInTime = inTime === '00:00' ? null : inTime;
     const processedOutTime = outTime === '00:00' ? null : outTime;
 
-   
+
 
     const entry = await db.AttendanceMst.create({
       EmpId: empId,
@@ -1911,7 +2164,7 @@ exports.updateAttendance1 = async (req, res) => {
     }
     if (outTime === '00:00') {
       outTime = null;
-    }    
+    }
 
     // If updating outTime, ensure there's a valid InTime
     if (outTime && !attendance.InTime) {

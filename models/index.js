@@ -42,13 +42,16 @@ async function initialize() {
         db.SalaryDetMst = require("./salaryDetMst.model.js")(sequelize, Sequelize);
         db.MainMenuMst = require("./mainMenu.model.js")(sequelize, Sequelize);
         db.MenuMst = require("./menu.model.js")(sequelize, Sequelize);
+        db.UserMenuMst = require("./userMenu.model.js")(sequelize, Sequelize);
+        db.ReportTypeMst = require("./reportType.model.js")(sequelize, Sequelize);
+        db.SubReportTypeMst = require("./subReportType.model.js")(sequelize, Sequelize);
+        db.UserReportMst = require("./userReport.model.js")(sequelize, Sequelize);
+
+
 
         db.SalaryMst.hasMany(db.SalaryDetMst, { foreignKey: 'SalaryMstId', onDelete: 'CASCADE' });
-        db.SalaryDetMst.belongsTo(db.SalaryMst, { foreignKey: 'SalaryMstId' });      
-
-        // Add more models here as needed
-        // db.YourModel = require('./yourModel.js')(sequelize, Sequelize);
-
+        db.SalaryDetMst.belongsTo(db.SalaryMst, { foreignKey: 'SalaryMstId' });
+    
         // Sync models with the database
         await sequelize.sync({ alter: true });
         console.log("✅ All models synced successfully.");

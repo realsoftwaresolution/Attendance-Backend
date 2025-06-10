@@ -7,6 +7,7 @@ const upload = require("../middlewares/upload.middleware");
 router.post("/register", adminController.register);
 router.post("/login", adminController.login);
 
+
 // Authenticated Routes
 router.use(authMiddleware); // This will apply the token validation middleware to the following routes
 router.post("/employee", upload, adminController.createEmployee);
@@ -21,10 +22,15 @@ router.post("/attendance", adminController.addAttendance1);
 router.post("/attendance-add", adminController.addAttendance);
 router.post("/master-setting", adminController.addMasterSetting);
 router.post("/att-mst", adminController.addAttMst);
+router.post("/user-permission", adminController.assignUserPermissions);
+router.get("/user-permission/:id", adminController.getUserPermissions);
 router.post("/save-calculated-salary", adminController.addSalaryMst);
+router.get("/users", adminController.getAllUsers);
 router.get("/employee", adminController.getAllEmployees);
 router.get("/main-menu", adminController.getAllMainMenu);
 router.get("/menu", adminController.getAllMenu);
+router.get("/report-type", adminController.getAllReportType);
+router.get("/sub-report-type", adminController.getAllSubReportType);
 router.get("/hours-category", adminController.getAllHoursCategory);
 router.get("/employee/faces", adminController.getAllFaceEmployees);
 router.get("/holiday", adminController.getAllHoliday);
@@ -44,6 +50,7 @@ router.put("/department/:id", adminController.updateDepartment);
 router.put("/designation/:id", adminController.updateDesignation);
 router.put("/firm/:id", adminController.updateFirm);
 router.put("/attendance/:id", adminController.updateAttendance1);
+router.put("/edit-user/:id", adminController.editUser);
 router.delete("/employee/:id", adminController.deleteEmployee);
 router.delete("/hours-category/:id", adminController.deleteHoursCategory);
 router.delete("/holiday/:id", adminController.deleteHoliday);
@@ -55,6 +62,9 @@ router.delete("/master-setting/:department", adminController.deleteMasterSetting
 router.delete("/attendance", adminController.deleteAttendance);
 router.delete("/shift-entry/:department", adminController.deleteShiftEntry);
 router.delete("/salary-mst/:id", adminController.deleteSalaryMst);
+router.delete("/user/:id", adminController.deleteUser);
+
+
 // Route to delete user documents
 router.delete('/employee/:id/documents', adminController.deleteUserDocuments);
 
