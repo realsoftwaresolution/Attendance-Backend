@@ -60,22 +60,8 @@ function attendanceMstModel(sequelize) {
         IsDelete: { type: DataTypes.BOOLEAN, allowNull: true },
     };
 
-    // const options = {
-    //     defaultScope: {
-    //         // exclude password and Token by default
-    //         attributes: { exclude: ['Password', 'Token'] }
-    //     },
-    //     scopes: {
-    //         // include hash with this scope
-    //         withHash: { attributes: {exclude: ['Token']}, },
-    //         withToken: { attributes: {exclude: ['Password']}, },
-    //         withAll: { attributes: {}, }
-
-    //     }
-    // };
-
     return sequelize.define('AttendanceMst', attributes, {
-        tableName: 'AttendanceMst', // Explicitly set the table name
+        tableName: 'AttendanceMst',
         timestamps: false,
     });
 }  

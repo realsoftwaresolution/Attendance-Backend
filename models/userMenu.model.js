@@ -11,7 +11,7 @@ function userMenuMstModel(sequelize) {
     };
 
     return sequelize.define('UserMenuMst', attributes, {
-        tableName: 'UserMenuMst', // Explicitly set the table name
+        tableName: 'UserMenuMst',
         timestamps: false,
     });
 }  

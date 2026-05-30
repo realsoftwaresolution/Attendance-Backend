@@ -12,25 +12,18 @@ function userMstModel(sequelize) {
         Edit_Rights: { type: DataTypes.BOOLEAN, allowNull: true },
         Delete_Rights: { type: DataTypes.BOOLEAN, allowNull: true },
         Sflag: { type: DataTypes.CHAR(1), allowNull: true },
-        SDate: { type: DataTypes.STRING, allowNull: true },
-        LogID: { type: DataTypes.INTEGER, allowNull: true },
-        PcID: { type: DataTypes.STRING(20), allowNull: true },
-        Ever: { type: DataTypes.INTEGER, allowNull: true },
         CompanyCode: { type: DataTypes.INTEGER, allowNull: true },
         SortId: { type: DataTypes.INTEGER, allowNull: true },
         Active: { type: DataTypes.BOOLEAN, allowNull: true },
         IsDelete: { type: DataTypes.BOOLEAN, allowNull: true },
         Token: { type: DataTypes.STRING(), allowNull: true },
-        TokenCreatedDate: { type: DataTypes.STRING, allowNull: true },
     };
 
     const options = {
         defaultScope: {
-            // exclude password and Token by default
             attributes: { exclude: ['Password', 'Token'] }
         },
         scopes: {
-            // include hash with this scope
             withHash: { attributes: {exclude: ['Token']}, },
             withToken: { attributes: {exclude: ['Password']}, },
             withAll: { attributes: {}, }
@@ -39,8 +32,8 @@ function userMstModel(sequelize) {
     };
 
     return sequelize.define('UserMst', attributes, {
-        tableName: 'UserMst', // Explicitly set the table name
-        timestamps: false,
+        tableName: 'UserMst',
+        timestamps: true,
         ...options 
     });
 }  

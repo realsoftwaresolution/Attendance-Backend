@@ -1,31 +1,59 @@
+require("dotenv").config();
 const express = require("express");
-const dotenv = require("dotenv");
-const db = require("./models");
-const cors = require('cors');
+const cors = require("cors");
+const path = require("path");
+const { loadFaceModels } = require("./utils/face.utils");
+const errorMiddleware = require("./middlewares/error.middleware");
+require("./config/dbConnection");
+const http = require("http");
+const { initializeSocket } = require("./socket");
+const initAllJobs = require("./jobs/index.job");
 
-dotenv.config();
 const app = express();
+const server = http.createServer(app);
 
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+const PORT = process.env.PORT || 2026;
+
 app.use(cors());
-// app.use(bodyParser.json({ limit: '50mb', extended: true }));
-// app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
-app.use(function (req, res, next) {
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET,PUT,PATCH,POST,DELETE");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
   next();
 });
 
-// Routes
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+
+/* --------------------------------- Routes --------------------------------- */
+app.use('/api', require('./routes/index.routes'))
 app.use("/admin", require("./routes/admin.routes"));
+app.use("/pc", require("./routes/pc.routes"));
+app.use("/reminder", require("./routes/task.routes"));
+app.use("/qr", require("./routes/qr.routes"));
 
-// Sync Database
-// db.sequelize.sync().then(() => {
-//   console.log("Database connected");
-// });
+/* ---------------- Error handler must be the LAST middleware --------------- */
+app.use(errorMiddleware);
 
-// Start Server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+(async () => {
+  try {
+    console.log("⏳ Initializing system components...");
+
+    // Load AI models before starting server
+    await loadFaceModels();
+    initializeSocket(server);
+
+    initAllJobs();
+
+    server.listen(PORT, "0.0.0.0", () => {
+      console.log(`🚀 Server running on http://localhost:${PORT}`);
+    });
+  } catch (err) {
+    console.error("❌ App startup failed:", err);
+    process.exit(1);
+  }
+})();
