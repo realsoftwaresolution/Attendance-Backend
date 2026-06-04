@@ -8,7 +8,7 @@ const pendingRequests = new Map();
 function initializeSocket(server) {
     const wss = new WebSocket.Server({ server });
 
-    console.log("WebSocket server running");
+    console.log("✔ WebSocket server running");
 
     wss.on("connection", (ws) => {
 

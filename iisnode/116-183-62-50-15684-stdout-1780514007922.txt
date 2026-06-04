@@ -1,0 +1,10 @@
+⏳ Initializing system components...
+✔ Face-api models loaded successfully
+✔ WebSocket server running
+✔ Initializing all schedulers...
+🚀 Server running on http://localhost:\\.\pipe\8efdbc3b-7bfa-4f51-8bd5-ee30de4f119b
+✔ Database initialized with 37 dynamic models
+[CRON_SYNC_STARTED]
+[SYNC_START] { trackerId: 1, lastAutoId: '35609' }
+[SYNC_ERROR] Local PC Offline
+[CRON_SYNC_FAILED] Local PC Offline

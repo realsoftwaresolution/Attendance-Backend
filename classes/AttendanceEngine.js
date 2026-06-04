@@ -1,61 +1,16 @@
 const moment = require('moment-timezone');
+const SalaryHelper = require('./SalaryHelper');
 
 class AttendanceEngine {
 
     static TIMEZONE = 'Asia/Kolkata';
 
-    static parseHHMMToMinutes(hhmm) {
-        if (!hhmm || hhmm === "00:00") return 0;
-        const [h, m] = hhmm.split(':').map(Number);
-        return (h * 60) + (m || 0);
-    };
 
-    static normalizeTimeToZone(timeInput, fieldName = 'Unknown Field') {
-        if (!timeInput) return null;
-
-        if (timeInput instanceof Date) {
-            const formatted = moment.tz(timeInput, this.TIMEZONE).format('HH:mm:ss');
-            console.log('[NORMALIZE_DATE_OBJ]', { fieldName, input: timeInput, output: formatted });
-            return formatted;
-        }
-
-        const inputStr = String(timeInput);
-
-        if (inputStr.includes('T')) {
-            return inputStr.split('T')[1].substring(0, 8);
-        }
-        if (inputStr.includes(' ')) {
-            const parts = inputStr.trim().split(/\s+/);
-            if (parts[1]) return parts[1].substring(0, 8);
-        }
-
-        return inputStr;
-    }
-
-    static parseTime(dateStr, timeStr, fieldName = 'Time Field') {
-        if (!timeStr) return null;
-
-        const cleanTimeStr = this.normalizeTimeToZone(timeStr, fieldName);
-        const parsed = moment.tz(
-            `${dateStr} ${cleanTimeStr}`,
-            'YYYY-MM-DD HH:mm:ss',
-            this.TIMEZONE
-        );
-
-        return parsed;
-    }
-
-    static minutesToHHMM(totalMinutes) {
-        if (!totalMinutes || totalMinutes <= 0) return "00:00";
-        const h = Math.floor(totalMinutes / 60);
-        const m = totalMinutes % 60;
-        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-    }
 
     static calculateDayMetrics(metrics, dateStr, logs, shift, isNightShift) {
         // --- 1. CALCULATE ORIGINAL CONFIGURATION TOTALS ---
-        let rawShiftIn = this.parseTime(dateStr, shift.ShiftIn, 'ShiftIn');
-        let rawShiftOut = this.parseTime(dateStr, shift.ShiftOut, 'ShiftOut');
+        let rawShiftIn = SalaryHelper.parseTime(dateStr, shift.ShiftIn, 'ShiftIn');
+        let rawShiftOut = SalaryHelper.parseTime(dateStr, shift.ShiftOut, 'ShiftOut');
 
         let configWorkMinutes = 0;
         let configOTMinutes = 0;
@@ -67,7 +22,7 @@ class AttendanceEngine {
         }
 
         const alignToShift = (timeStr, name) => {
-            let targetTime = this.parseTime(dateStr, timeStr, name);
+            let targetTime = SalaryHelper.parseTime(dateStr, timeStr, name);
             if (!targetTime) return null;
 
             if (isNightShift) {
@@ -116,10 +71,10 @@ class AttendanceEngine {
         }
 
         // Set baseline original capacities
-        metrics.OriginalWorkingHours = this.minutesToHHMM(configWorkMinutes);
-        metrics.OriginalOTHours = this.minutesToHHMM(configOTMinutes);
+        metrics.OriginalWorkingHours = SalaryHelper.minutesToHHMM(configWorkMinutes);
+        metrics.OriginalOTHours = SalaryHelper.minutesToHHMM(configOTMinutes);
 
-        // --- 2. RUN ACTUAL PUNCH CALCULATIONS ---
+        // --- 2. RUN ACTUAL PUNCH CALCULATIONS ---------------------------------------------
         if (!logs?.length) {
             console.log('[ENGINE_EMPTY_LOGS]', { dateStr });
             return metrics;
@@ -177,12 +132,15 @@ class AttendanceEngine {
 
         let effectiveStart = shiftIn.clone();
         let effectiveEnd = shiftOut.clone();
+        let lateDeductionMinutes = 0;
+        let earlyOutDeductionMinutes = 0;
 
         /* LATE IN EVALUATION */
         if (actualIn.isAfter(shiftIn)) {
             const lateMinutes = actualIn.diff(shiftIn, 'minutes');
             if (lateMinutes > grace) {
                 isLate = true;
+                lateDeductionMinutes = lateMinutes;
                 effectiveStart = actualIn.clone();
             }
         }
@@ -192,6 +150,7 @@ class AttendanceEngine {
             const earlyMinutes = shiftOut.diff(actualOut, 'minutes');
             if (earlyMinutes > grace) {
                 isEarly = true;
+                earlyOutDeductionMinutes = earlyMinutes;
                 effectiveEnd = actualOut.clone();
             }
         }
@@ -201,7 +160,7 @@ class AttendanceEngine {
 
         /* ACTUAL LUNCH DEDUCTION (Using Configured Duration) */
         if (shift.IsLunchBreak && shift.LunchIn && shift.LunchOut) {
-            metrics.LunchBreak = this.minutesToHHMM(configLunchMinutes);
+            metrics.LunchBreak = SalaryHelper.minutesToHHMM(configLunchMinutes);
         }
 
         /* ACTUAL PRE SHIFT OT TRACKING */
@@ -236,7 +195,7 @@ class AttendanceEngine {
             }
         }
 
-        /* STATUS DEFINITION */
+        /* STATUS DEFINITION do not change order of status cal. */
         let status = 'Present';
         const hours = totalWorkMinutes / 60;
 
@@ -253,16 +212,17 @@ class AttendanceEngine {
         }
 
 
-        metrics.WorkHours = this.minutesToHHMM(totalWorkMinutes);
+        metrics.WorkHours = SalaryHelper.minutesToHHMM(totalWorkMinutes);
         totalWorkMinutes = Math.max(0, totalWorkMinutes + totalOTMinutes - workGapMinutes - otGapMinutes - configLunchMinutes);
         metrics.Status = status;
-        metrics.OTHours = this.minutesToHHMM(totalOTMinutes);
-        metrics.WorkGapMinutes = this.minutesToHHMM(workGapMinutes);
-        metrics.OTGapMinutes = this.minutesToHHMM(otGapMinutes);
-        metrics.FinalTotalHours = this.minutesToHHMM(Math.max(0, totalWorkMinutes));
+        metrics.OTHours = SalaryHelper.minutesToHHMM(totalOTMinutes);
+        metrics.WorkGapMinutes = SalaryHelper.minutesToHHMM(workGapMinutes);
+        metrics.OTGapMinutes = SalaryHelper.minutesToHHMM(otGapMinutes);
+        metrics.FinalTotalHours = SalaryHelper.minutesToHHMM(Math.max(0, totalWorkMinutes));
         metrics.ShiftType = shift.ShiftType
         metrics.ShiftEntryMstId = shift.ShiftEntryMstId
-        metrics.MonthlyTargetHours = shift.MonthlyTargetHours
+        metrics.LateMinutes = SalaryHelper.minutesToHHMM(lateDeductionMinutes);
+        metrics.EarlyOutMinutes = SalaryHelper.minutesToHHMM(earlyOutDeductionMinutes);
 
         return metrics;
     }

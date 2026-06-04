@@ -2,13 +2,14 @@ const express = require('express');
 const router = express.Router();
 const ctrl = require('../../controllers/master/employee.controller')
 const asyncHandler = require("../../middlewares/async.middleware");
-const verifyToken = require('../../middlewares/auth.middleware');
 const validate = require('../../utils/validator');
 const { employeeRegistrationSchema } = require('../../validations/master/employee.validation');
 const { AppError } = require('../../utils/AppError');
 const { configureMulterValidators } = require('../../utils/uploadEngine');
 const db = require('../../config/dbConnection');
 const asyncTransactionHandler = require('../../middlewares/asyncTransaction.middleware');
+const { verifyToken, checkPermission } = require('../../middlewares/auth.middleware');
+const { FORMS } = require('../../constants/permissions.constants');
 
 const employeeUploadSchema = [
     {
@@ -23,7 +24,7 @@ const employeeUploadSchema = [
         pathBuilder: (req) => `employee/documents`,
         maxCount: 4,
         maxSizeMb: 3,
-        allowedTypes: ["application/pdf"]
+        allowedTypes: ["application/pdf", "image/jpeg", "image/png", "image/jpg"]
     },
     {
         name: "biometricData",
@@ -37,16 +38,18 @@ const employeeUploadSchema = [
 
 router.use(verifyToken);
 /* ------------------ GET ENDPOINTS ------------------ */
-router.get("/", asyncHandler(ctrl.getAllEmployees));
+router.get("/", checkPermission(FORMS.EMPLOYEE, 'view'), asyncHandler(ctrl.getAllEmployees));
 
 /* ------------------ POST ENDPOINT ------------------ */
 router.post(
     "/",
+    checkPermission(FORMS.EMPLOYEE, 'create'),
     configureMulterValidators(employeeUploadSchema),
     validate(employeeRegistrationSchema),
     asyncTransactionHandler(ctrl.createEmployee)
 );
-router.get('/history/:empMstId', asyncHandler(ctrl.getEmployeeSalaryHistory));
+router.get('/history/:empMstId', checkPermission(FORMS.EMPLOYEE, 'view'), asyncHandler(ctrl.getEmployeeSalaryHistory));
+router.delete('/salary-delete/:historyId', checkPermission(FORMS.EMPLOYEE, 'delete'), asyncTransactionHandler(ctrl.deleteSalaryHistory));
 
 /* ------------------ PUT ENDPOINT (With Count Check) ------------------ */
 const checkExistingDocumentThreshold = async (req, res, next) => {
@@ -84,6 +87,7 @@ const checkExistingDocumentThreshold = async (req, res, next) => {
 
 router.put(
     "/:id",
+    checkPermission(FORMS.EMPLOYEE, 'edit'),
     configureMulterValidators(employeeUploadSchema),
     asyncHandler(checkExistingDocumentThreshold),
     validate(employeeRegistrationSchema),
@@ -91,7 +95,7 @@ router.put(
 );
 
 /* ------------------ DELETE ENDPOINTS ------------------ */
-router.delete("/:id", asyncTransactionHandler(ctrl.deleteEmployee));
-router.delete('/:id/documents', asyncHandler(ctrl.deleteUserDocuments));
+router.delete("/:id", checkPermission(FORMS.EMPLOYEE, 'delete'), asyncTransactionHandler(ctrl.deleteEmployee));
+router.delete('/:id/documents', checkPermission(FORMS.EMPLOYEE, 'delete'), asyncHandler(ctrl.deleteUserDocuments));
 
 module.exports = router;

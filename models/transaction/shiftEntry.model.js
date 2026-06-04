@@ -138,12 +138,6 @@ const ShiftEntryMst = (sequelize) => {
             defaultValue: 0
         },
 
-        MonthlyTargetHours: {
-            type: DataTypes.DECIMAL(10, 2),
-            allowNull: true,
-            defaultValue: 192.00 // Example: 8 hours * 24 days
-        },
-
         /* ----------------------------- Common Fields ---------------------------- */
 
         SortId: {

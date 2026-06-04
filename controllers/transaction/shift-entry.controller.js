@@ -49,14 +49,33 @@ exports.getAllShiftEntry = async (req, res, next) => {
 
     const data = await db.sequelize.query(`
         SELECT
-            ShiftEntryMstId, FromDate, ToDate, CompanyMstId, DepartmentMstId, ShiftType,
-            CONVERT(VARCHAR, ShiftIn, 108) AS ShiftIn, CONVERT(VARCHAR, ShiftOut, 108) AS ShiftOut,
-            IsPreShiftOT, CONVERT(VARCHAR, PreShiftOTIn, 108) AS PreShiftOTIn, CONVERT(VARCHAR, PreShiftOTOut, 108) AS PreShiftOTOut,
-            IsPostShiftOT, CONVERT(VARCHAR, PostShiftOTIn, 108) AS PostShiftOTIn, CONVERT(VARCHAR, PostShiftOTOut, 108) AS PostShiftOTOut,
-            IsLunchBreak, CONVERT(VARCHAR, LunchIn, 108) AS LunchIn, CONVERT(VARCHAR, LunchOut, 108) AS LunchOut,
-            IsHalfDayRule, HalfDayHours, IsGraceTime, GraceMinutes, MonthlyTargetHours, SortId, Active
-        FROM ShiftEntryMst
-        ORDER BY FromDate DESC, DepartmentMstId ASC
+            S.ShiftEntryMstId, 
+            S.FromDate, 
+            S.ToDate, 
+            C.CompanyName, 
+            D.Department,
+            S.ShiftType,
+            CONVERT(VARCHAR, S.ShiftIn, 108) AS ShiftIn, 
+            CONVERT(VARCHAR, S.ShiftOut, 108) AS ShiftOut,
+            S.IsPreShiftOT, 
+            CONVERT(VARCHAR, S.PreShiftOTIn, 108) AS PreShiftOTIn, 
+            CONVERT(VARCHAR, S.PreShiftOTOut, 108) AS PreShiftOTOut,
+            S.IsPostShiftOT, 
+            CONVERT(VARCHAR, S.PostShiftOTIn, 108) AS PostShiftOTIn, 
+            CONVERT(VARCHAR, S.PostShiftOTOut, 108) AS PostShiftOTOut,
+            S.IsLunchBreak, 
+            CONVERT(VARCHAR, S.LunchIn, 108) AS LunchIn, 
+            CONVERT(VARCHAR, S.LunchOut, 108) AS LunchOut,
+            S.IsHalfDayRule, 
+            S.HalfDayHours, 
+            S.IsGraceTime, 
+            S.GraceMinutes, 
+            S.SortId, 
+            S.Active
+        FROM ShiftEntryMst S
+        LEFT JOIN CompanyMst C ON S.CompanyMstId = C.CompanyMstId
+        LEFT JOIN DepartmentMst D ON S.DepartmentMstId = D.DepartmentMstId
+        ORDER BY S.FromDate DESC, S.DepartmentMstId ASC
         OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY
     `, {
         replacements: { offset, limit },
@@ -87,7 +106,7 @@ exports.addShiftEntry = async (req, res, next) => {
         IsPreShiftOT, PreShiftOTIn, PreShiftOTOut,
         IsPostShiftOT, PostShiftOTIn, PostShiftOTOut,
         IsLunchBreak, LunchIn, LunchOut,
-        IsHalfDayRule, HalfDayHours, IsGraceTime, GraceMinutes, SortId, MonthlyTargetHours
+        IsHalfDayRule, HalfDayHours, IsGraceTime, GraceMinutes, SortId
     } = req.body;
 
     const transaction = req.transaction;
@@ -194,7 +213,6 @@ exports.addShiftEntry = async (req, res, next) => {
         IsLunchBreak: IsLunchBreak || false, LunchIn: LunchIn || null, LunchOut: LunchOut || null,
         IsHalfDayRule: IsHalfDayRule || false, HalfDayHours: HalfDayHours || 4,
         IsGraceTime: IsGraceTime || false, GraceMinutes: GraceMinutes || 0,
-        MonthlyTargetHours: MonthlyTargetHours || 192.00,
         SortId: SortId || 1, Active: true, Sflag: 'I', LogID: req.logId, PcID: req.pcId
     }, { transaction });
 
@@ -258,6 +276,3 @@ exports.deleteShiftEntry = async (req, res, next) => {
         message: `${ShiftType} shift deleted successfully.`
     });
 };
-
-
-

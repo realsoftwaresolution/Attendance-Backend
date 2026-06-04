@@ -137,16 +137,6 @@ const shiftEntrySchema = Joi.object({
                 'GraceMinutes cannot be negative.'
         }),
 
-    MonthlyTargetHours: Joi.number()
-        .precision(2)
-        .min(0)
-        .max(744)
-        .default(192)
-        .messages({
-            'number.base': 'MonthlyTargetHours must be a number.',
-            'number.max': 'MonthlyTargetHours cannot exceed 744 hours.'
-        }),
-
     /* ----------------------------- Common Fields -------------------------- */
 
     SortId: Joi.number()

@@ -1,9 +1,8 @@
 const router = require("express").Router();
-const authMiddleware = require("../middlewares/auth.middleware");
 const adminController = require("../controllers/admin.controller");
 const upload = require("../middlewares/upload.middleware");
 
-router.use(authMiddleware);
+// router.use(authMiddleware);
 
 router.post(
   "/face/register",

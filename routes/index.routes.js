@@ -9,12 +9,18 @@ router.use("/designation", require('./master/designation.routes'));
 router.use("/department", require('./master/department.routes'));
 router.use("/company", require('./master/company.routes'));
 router.use("/employee", require('./master/employee.routes'));
+router.use("/pf", require('./master/pf.routes'));
+router.use("/pt", require('./master/pt.routes'));
+router.use("/esic", require('./master/esic.routes'));
 
 /* --------------------------- transaction routes --------------------------- */
 router.use("/shift-entry", require('./transaction/shift-entry.routes'));
 router.use("/attendance", require('./transaction/attendance.routes'));
 router.use("/hours-calculation", require('./transaction/hours-calculation.routes'));
 router.use("/salary-calculation", require('./transaction/salary-calculation.routes'));
+
+/* ----------------------------- utility routes ----------------------------- */
+router.use("/master-settings", require('./utility/masterSetting.routes'));
 
 
 

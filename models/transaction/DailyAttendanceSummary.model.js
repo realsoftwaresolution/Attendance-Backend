@@ -10,6 +10,10 @@ module.exports = (sequelize) => {
         // --- Metrics from Attendance Engine ---
         ShiftEntryMstId: { type: DataTypes.INTEGER },
         Status: { type: DataTypes.STRING(20) }, // e.g., Present, Absent, Half Day
+        Remark: {
+            type: DataTypes.STRING(255),
+            allowNull: true
+        },
         WorkHours: { type: DataTypes.STRING(10) },
         OTHours: { type: DataTypes.STRING(10) },
         LunchBreak: { type: DataTypes.STRING(10) },
@@ -18,18 +22,19 @@ module.exports = (sequelize) => {
         WorkGapMinutes: { type: DataTypes.STRING(10), defaultValue: "00:00" },
         OTGapMinutes: { type: DataTypes.STRING(10), defaultValue: "00:00" },
 
+        LateMinutes: {
+            type: DataTypes.STRING(10),
+            defaultValue: "00:00"
+        },
+
+        EarlyOutMinutes: {
+            type: DataTypes.STRING(10),
+            defaultValue: "00:00"
+        },
+
         // --- Hourly/Target Reference (Used for calculations) ---
         OriginalWorkingHours: { type: DataTypes.STRING(10) },
         OriginalOTHours: { type: DataTypes.STRING(10) },
-
-        // --- Financial Snapshot (Per Day) ---
-        BaseMonthlySalary: { type: DataTypes.DECIMAL(18, 2) },
-        HourlyWageRate: { type: DataTypes.DECIMAL(18, 4) },
-        PerMinuteWageRate: { type: DataTypes.DECIMAL(18, 4) },
-
-        // Daily Earning/Deduction Snapshot
-        FinalDailyWagesEarned: { type: DataTypes.DECIMAL(18, 2) },
-        DailyOTEarned: { type: DataTypes.DECIMAL(18, 2) },
 
         // --- Audit & Context ---
         IsHoliday: { type: DataTypes.BOOLEAN, defaultValue: false },

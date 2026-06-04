@@ -45,7 +45,7 @@ async function generateDailyAttendanceData({ departmentId, date, month }) {
     });
 
     const departmentShifts = await db.sequelize.query(`
-        SELECT ShiftEntryMstId, FromDate, ToDate, CompanyMstId, DepartmentMstId, ShiftType, MonthlyTargetHours,
+        SELECT ShiftEntryMstId, FromDate, ToDate, CompanyMstId, DepartmentMstId, ShiftType,
             CONVERT(VARCHAR(8), ShiftIn, 108) AS ShiftIn, CONVERT(VARCHAR(8), ShiftOut, 108) AS ShiftOut,
             IsPreShiftOT, CONVERT(VARCHAR(8), PreShiftOTIn,108) AS PreShiftOTIn, CONVERT(VARCHAR(8), PreShiftOTOut,108) AS PreShiftOTOut,
             IsPostShiftOT, CONVERT(VARCHAR(8), PostShiftOTIn,108) AS PostShiftOTIn, CONVERT(VARCHAR(8), PostShiftOTOut,108) AS PostShiftOTOut,
@@ -123,7 +123,29 @@ async function generateDailyAttendanceData({ departmentId, date, month }) {
                 assignedShift = validShifts[0];
             }
 
-            if (!assignedShift) continue;
+            if (!assignedShift) {
+                dailyRecords.push({
+                    Date: dateStr,
+                    EmpCode: emp.EmpCode,
+                    EmployeeName: emp.EmpFullName,
+                    EmpMstId: emp.EmpMstId,
+                    ShiftEntryMstId: null,
+                    ShiftType: null,
+                    WorkHours: "00:00",
+                    OTHours: "00:00",
+                    LunchBreak: "00:00",
+                    GapMinutes: "00:00",
+                    LateMinutes: "00:00",
+                    EarlyOutMinutes: "00:00",
+                    FinalTotalHours: "00:00",
+                    Status: isHoliday ? "Holiday" : "Absent",
+                    IsHoliday: isHoliday,
+                    HolidayName: holidayName,
+                    Remark: "No Shift Assigned"
+                });
+
+                continue;
+            }
 
             const [inH, inM] = assignedShift.ShiftIn.split(':').map(Number);
             const shiftInMinutes = (inH * 60) + (inM || 0);
@@ -162,13 +184,14 @@ async function generateDailyAttendanceData({ departmentId, date, month }) {
                 OTHours: "00:00",
                 LunchBreak: "00:00",
                 GapMinutes: "00:00",
+                LateMinutes: "00:00",
+                EarlyOutMinutes: "00:00",
                 FinalTotalHours: "00:00",
                 Status: isHoliday ? "Holiday" : "Absent",
                 IsHoliday: isHoliday,
                 HolidayName: holidayName,
                 ShiftType: assignedShift.ShiftType,
                 ShiftEntryMstId: assignedShift.ShiftEntryMstId,
-                MonthlyTargetHours: assignedShift.MonthlyTargetHours
             };
 
             metrics = AttendanceEngine.calculateDayMetrics(metrics, dateStr, dayPunches, assignedShift, isNightShift);

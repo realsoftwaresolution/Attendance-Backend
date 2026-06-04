@@ -76,7 +76,7 @@ async function initialize() {
         db.sequelize = sequelize;
         db.Sequelize = Sequelize;
 
-        console.log(`✅ Database initialized with ${Object.keys(db).length - 2} dynamic models in IST (+05:30)`);
+        console.log(`✔ Database initialized with ${Object.keys(db).length - 2} dynamic models`);
     } catch (err) {
         console.error("❌ DB init failed:", err);
     }

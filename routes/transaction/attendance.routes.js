@@ -3,14 +3,15 @@ const router = express.Router();
 const ctrl = require('../../controllers/transaction/attendance.controller')
 const asyncHandler = require("../../middlewares/async.middleware");
 const asyncTransactionHandler = require("../../middlewares/asyncTransaction.middleware");
-const verifyToken = require('../../middlewares/auth.middleware');
 const validate = require('../../utils/validator');
+const { verifyToken, checkPermission } = require('../../middlewares/auth.middleware');
+const { FORMS } = require('../../constants/permissions.constants');
 
 
 router.use(verifyToken);
-router.get("/", asyncHandler(ctrl.getPunchLogs));
-router.get("/manual-calculate", asyncHandler(ctrl.manualCalculateDailySummary));
-router.put("/", asyncTransactionHandler(ctrl.updatePunchDay));
-router.post("/sync-punch", asyncHandler(ctrl.syncPunchNow));
+router.get("/", checkPermission(FORMS.ATTENDANCE, 'view'), asyncHandler(ctrl.getPunchLogs));
+router.get("/manual-calculate", checkPermission(FORMS.ATTENDANCE, 'view'), asyncHandler(ctrl.manualCalculateDailySummary));
+router.put("/", checkPermission(FORMS.ATTENDANCE, 'edit'), asyncTransactionHandler(ctrl.updatePunchDay));
+router.post("/sync-punch", checkPermission(FORMS.ATTENDANCE, 'view'), asyncHandler(ctrl.syncPunchNow));
 
 module.exports = router;

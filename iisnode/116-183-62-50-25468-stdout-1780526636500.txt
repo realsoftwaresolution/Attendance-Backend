@@ -1,0 +1,6 @@
+⏳ Initializing system components...
+✔ Face-api models loaded successfully
+✔ WebSocket server running
+✔ Initializing all schedulers...
+🚀 Server running on http://localhost:\\.\pipe\436f6fb0-62af-4366-88d9-99a5e1eada8c
+✔ Database initialized with 37 dynamic models

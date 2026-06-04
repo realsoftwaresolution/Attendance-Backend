@@ -22,7 +22,7 @@ async function loadFaceModels() {
     ]);
 
     modelsLoaded = true;
-    console.log("✅ Face-api models loaded successfully");
+    console.log("✔ Face-api models loaded successfully");
   } catch (error) {
     console.error("❌ Model load error:", error.message);
     throw error;

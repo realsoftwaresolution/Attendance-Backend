@@ -1,10 +1,10 @@
 const { startPunchSyncJob } = require("./punchSync.job");
-const { scheduleSalaryJob } = require("./salaryCalc.job");
+const { scheduleDailyAttendanceSummaryJob } = require("./scheduleDailyAttendanceSummary.job");
 
 const initAllJobs = () => {
-    console.log('[JOBS] Initializing all schedulers...');
+    console.log('✔ Initializing all schedulers...');
 
-    scheduleSalaryJob();
+    scheduleDailyAttendanceSummaryJob();
     startPunchSyncJob()
 };
 

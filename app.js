@@ -8,11 +8,12 @@ require("./config/dbConnection");
 const http = require("http");
 const { initializeSocket } = require("./socket");
 const initAllJobs = require("./jobs/index.job");
+const seedDatabase = require("./utils/dbSeeder");
 
 const app = express();
 const server = http.createServer(app);
 
-const PORT = process.env.PORT || 2026;
+const PORT = process.env.PORT || 2026;  
 
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
@@ -48,6 +49,7 @@ app.use(errorMiddleware);
     initializeSocket(server);
 
     initAllJobs();
+    // await seedDatabase();
 
     server.listen(PORT, "0.0.0.0", () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
