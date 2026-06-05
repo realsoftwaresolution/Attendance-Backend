@@ -3,7 +3,7 @@ const SalaryContext = require("./SalaryContext");
 
 class SalaryCalculator {
 
-    calculate({
+    async calculate({
         employee,
         setting,
         salaryRecord,
@@ -22,14 +22,14 @@ class SalaryCalculator {
         switch (salaryRecord?.SalaryType) {
 
             case 'Fixed':
-                new FixedSalaryCalculator().calculate(context);
+                await new FixedSalaryCalculator().calculate(context);
                 break;
 
             case 'Working':
                 context.message =
                     'Working salary calculation not implemented yet.';
                 context.isSkipped = true;
-                return context;
+                break;
 
             default:
                 throw new Error(

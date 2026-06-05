@@ -173,9 +173,34 @@ exports.updatePFDetail = async (req, res) => {
         );
     }
 
+
     if (Number(latestPF.PFCode) !== Number(PFCode)) {
         throw new AppError(
             'Only the latest active PF structure can be edited.',
+            400
+        );
+    }
+
+    /* ---------------- Salary Processed Check ---------------- */
+
+    const pfEffectiveMonth =
+        moment(latestPF.FromDate).format('YYYY-MM');
+
+    const salaryProcessed =
+        await db.SalaryDet.findOne({
+            where: {
+                CompanyMstId,
+                SalaryMonth: {
+                    [Op.gte]: pfEffectiveMonth
+                }
+            },
+            order: [['SalaryMonth', 'ASC']],
+            transaction
+        });
+
+    if (salaryProcessed) {
+        throw new AppError(
+            `Salary already processed from ${salaryProcessed.SalaryMonth}. This PF structure cannot be modified.`,
             400
         );
     }
@@ -305,6 +330,30 @@ exports.deletePFDetail = async (req, res) => {
     if (Number(latestActivePF.PFCode) !== Number(PFCode)) {
         throw new AppError(
             'Only the latest active PF structure can be deleted.',
+            400
+        );
+    }
+
+    /* ---------------- Salary Processed Check ---------------- */
+
+    const pfEffectiveMonth =
+        moment(latestActivePF.FromDate).format('YYYY-MM');
+
+    const salaryProcessed =
+        await db.SalaryDet.findOne({
+            where: {
+                CompanyMstId,
+                SalaryMonth: {
+                    [Op.gte]: pfEffectiveMonth
+                }
+            },
+            order: [['SalaryMonth', 'ASC']],
+            transaction
+        });
+
+    if (salaryProcessed) {
+        throw new AppError(
+            `Salary already processed from ${salaryProcessed.SalaryMonth}. This PF structure cannot be deleted.`,
             400
         );
     }

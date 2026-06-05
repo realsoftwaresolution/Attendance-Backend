@@ -1,0 +1,32 @@
+⏳ Initializing system components...
+✔ Face-api models loaded successfully
+✔ WebSocket server running
+✔ Initializing all schedulers...
+🚀 Server running on http://localhost:\\.\pipe\73d49c79-8c50-4139-9634-b3ad41e2cbc4
+✔ Database initialized with 39 dynamic models
+✅ NEW PC: iMacs-iMac.local
+[CRON_SYNC_STARTED]
+[SYNC_START] { trackerId: 1, lastAutoId: '35609' }
+[SYNC_ERROR] Local PC Offline
+[CRON_SYNC_FAILED] Local PC Offline
+[CRON_SYNC_STARTED]
+[SYNC_START] { trackerId: 1, lastAutoId: '35609' }
+[SYNC_ERROR] Local PC Offline
+[CRON_SYNC_FAILED] Local PC Offline
+[CRON_SYNC_STARTED]
+[SYNC_START] { trackerId: 1, lastAutoId: '35609' }
+[SYNC_ERROR] Local PC Offline
+[CRON_SYNC_FAILED] Local PC Offline
+✅ NEW PC: REAL6
+[CRON_SYNC_STARTED]
+[SYNC_START] { trackerId: 1, lastAutoId: '35609' }
+[SYNC_ERROR] Local PC Offline
+[CRON_SYNC_FAILED] Local PC Offline
+[CRON_SYNC_STARTED]
+[SYNC_START] { trackerId: 1, lastAutoId: '35609' }
+[SYNC_ERROR] Local PC Offline
+[CRON_SYNC_FAILED] Local PC Offline
+[CRON_SYNC_STARTED]
+[SYNC_START] { trackerId: 1, lastAutoId: '35609' }
+[SYNC_ERROR] Local PC Offline
+[CRON_SYNC_FAILED] Local PC Offline

@@ -19,6 +19,10 @@ const errorMiddleware = (err, req, res, next) => {
     console.log(`${RED}SQL Query: ${err.sql}${RESET}`);
   }
 
+  if (err.name === 'SequelizeUniqueConstraintError') {
+    detailedError = 'Database unique validation failed.';
+  }
+
   console.log(`${RED}Detailed Message: ${detailedError}${RESET}`);
   console.log(`${RED}Stack: ${err.stack}${RESET}`);
 
@@ -54,10 +58,10 @@ const errorMiddleware = (err, req, res, next) => {
 
   if (err.code === 'LIMIT_UNEXPECTED_FILE') {
     return res.status(400).json({
-        success: false,
-        message: "Document limit exceeded. Maximum allowed is 4 documents total."
+      success: false,
+      message: "Document limit exceeded. Maximum allowed is 4 documents total."
     });
-}
+  }
 
   /* ------------------- Joi validation error ------------------ */
   if (err.isJoi) {

@@ -48,6 +48,7 @@ router.post(
     validate(employeeRegistrationSchema),
     asyncTransactionHandler(ctrl.createEmployee)
 );
+router.get("/basic-info/:empCode", checkPermission(FORMS.EMPLOYEE, 'view'), asyncHandler(ctrl.getEmployeeBasicInfo));
 router.get('/history/:empMstId', checkPermission(FORMS.EMPLOYEE, 'view'), asyncHandler(ctrl.getEmployeeSalaryHistory));
 router.delete('/salary-delete/:historyId', checkPermission(FORMS.EMPLOYEE, 'delete'), asyncTransactionHandler(ctrl.deleteSalaryHistory));
 

@@ -110,6 +110,14 @@ const employeeRegistrationSchema = Joi.object({
             'any.required': 'Date of Joining is required'
         }),
 
+    DateOfBirth: Joi.string()
+        .isoDate()
+        .required()
+        .messages({
+            'string.isoDate':
+                'Date of Birth must be a valid ISO Date format (YYYY-MM-DD)'
+        }),
+
     EmpGrp: Joi.string()
         .max(30)
         .required()

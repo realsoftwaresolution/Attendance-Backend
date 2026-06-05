@@ -182,6 +182,30 @@ exports.updatePTDetail = async (req, res) => {
         );
     }
 
+    /* ---------------- Salary Processed Check ---------------- */
+
+    const ptEffectiveMonth =
+        moment(latestPT.FromDate).format('YYYY-MM');
+
+    const salaryProcessed =
+        await db.SalaryDet.findOne({
+            where: {
+                CompanyMstId,
+                SalaryMonth: {
+                    [Op.gte]: ptEffectiveMonth
+                }
+            },
+            order: [['SalaryMonth', 'ASC']],
+            transaction
+        });
+
+    if (salaryProcessed) {
+        throw new AppError(
+            `Salary already processed from ${salaryProcessed.SalaryMonth}. This PT structure cannot be modified.`,
+            400
+        );
+    }
+
     const originalFromDate = moment(
         existingDetails[0].FromDate
     ).format('YYYY-MM-DD');
@@ -299,6 +323,30 @@ exports.deletePTDetail = async (req, res) => {
     if (Number(latestActivePT.PTCode) !== Number(PTCode)) {
         throw new AppError(
             'Only the latest active PT structure can be deleted.',
+            400
+        );
+    }
+
+    /* ---------------- Salary Processed Check ---------------- */
+
+    const ptEffectiveMonth =
+        moment(latestActivePT.FromDate).format('YYYY-MM');
+
+    const salaryProcessed =
+        await db.SalaryDet.findOne({
+            where: {
+                CompanyMstId,
+                SalaryMonth: {
+                    [Op.gte]: ptEffectiveMonth
+                }
+            },
+            order: [['SalaryMonth', 'ASC']],
+            transaction
+        });
+
+    if (salaryProcessed) {
+        throw new AppError(
+            `Salary already processed from ${salaryProcessed.SalaryMonth}. This PT structure cannot be deleted.`,
             400
         );
     }

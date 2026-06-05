@@ -45,8 +45,21 @@ async function calculateDepartmentSalary({ month, departmentId }) {
     }
 
     // 2. Fetch all active employees in department
-    const employees = await db.EmployeeMst.findAll({
-        where: { DepartmentMstId: departmentId, Active: true }
+    const employees = await db.sequelize.query(`
+    SELECT
+        E.*,
+        C.CompanyName,
+        D.Department,
+        DG.Designation
+    FROM EmployeeMst E
+    LEFT JOIN CompanyMst C ON C.CompanyMstId = E.CompanyMstId
+    LEFT JOIN DepartmentMst D ON D.DepartmentMstId = E.DepartmentMstId
+    LEFT JOIN DesignationMst DG ON DG.DesignationMstId = E.DesignationMstId
+    WHERE E.DepartmentMstId = :departmentId
+        AND E.Active = 1
+`, {
+        replacements: { departmentId },
+        type: db.sequelize.QueryTypes.SELECT
     });
 
     if (employees.length === 0) return { month, departmentId, data: [] };
@@ -93,58 +106,122 @@ async function calculateDepartmentSalary({ month, departmentId }) {
 
     // 5. Calculate
     const calculator = new SalaryCalculator();
-    const results = employees.map(employee => {
-        const salaryRecord = salaryMap.get(employee.EmpMstId);
-        const employeeAttendance = attendanceMap[employee.EmpMstId] || [];
+    const results = await Promise.all(
+        employees.map(async employee => {
+            const salaryRecord = salaryMap.get(employee.EmpMstId);
+            const employeeAttendance = attendanceMap[employee.EmpMstId] || [];
 
-        if (!salaryRecord) {
+            if (!salaryRecord) {
+                return null
+            }
+
+            const context = await calculator.calculate({
+                employee,
+                setting,
+                salaryRecord,
+                attendanceRecords: employeeAttendance,
+                month
+            });
+
+            if (context.isSkipped) {
+                return null
+            }
+
             return {
-                EmpMstId: employee.EmpMstId,
-                EmpCode: employee.EmpCode,
-                EmpFullName: employee.EmpFullName,
-                error: `No salary configured for ${month}`
-            };
-        }
-
-        const context = calculator.calculate({
-            employee,
-            setting,
-            salaryRecord,
-            attendanceRecords: employeeAttendance,
-            month
-        });
-
-        if (context.isSkipped) {
-            return {
-                EmpMstId: employee.EmpMstId,
-                EmpCode: employee.EmpCode,
-                EmpFullName: employee.EmpFullName,
+                ...employee,
                 SalaryType: salaryRecord.SalaryType,
-                message: context.message
-            };
-        }
+                SalaryMonth: month,
+                BaseSalary: context.baseSalary,
+                /* ---------------- Attendance Summary ---------------- */
+                TotalPresentDays: context.totalPresentDays,
+                TotalNormalPresentDays: context.totalNormalPresentDays,
+                TotalHalfDays: context.totalHalfDays,
+                TotalAbsentDays: context.totalAbsentDays,
+                /* ---------------- Holiday / Sunday Audit ---------------- */
+                PaidHolidayCount: context.paidHolidayCount,
+                UnpaidHolidayCount: context.unpaidHolidayCount,
+                PaidSundayCount: context.paidSundayCount,
+                UnpaidSundayCount: context.unpaidSundayCount,
+                /* ---------------- Salary Calculation ---------------- */
+                SalaryDivisorDays: context.salaryDivisorDays,
+                SalaryPayableDays: context.salaryPayableDays,
+                SalaryExpectedMinutes: context.salaryExpectedMinutes,
+                SalaryPayableMinutes: context.salaryPayableMinutes,
+                SalaryPerDayRate: context.salaryPerDayRate,
+                SalaryPerMinuteRate: context.salaryPerMinuteRate,
+                GrossSalary: context.grossSalary,
+                /* ---------------- Salary Distribution ---------------- */
+                BankPayableSalary: context.bankPayableSalary,
+                CashPayableSalary: context.cashPayableSalary,
+                /* ---------------- PF Details ---------------- */
+                PFApplicable: context.pfApplicable,
+                PFCode: context.pfCode,
+                EmployeeAge: context.employeeAge,
+                EPSApplicable: context.epsApplicable,
+                EPFWages: context.epfWages,
+                EPSWages: context.epsWages,
+                EmployeeEPF: context.employeeEPF,
+                EmployeeEPS: context.employeeEPS,
+                EmployerEPF: context.employerEPF,
+                EmployerAcc02: context.employerAcc02,
+                EmployerAcc21: context.employerAcc21,
+                EmployerAcc22: context.employerAcc22,
+                /* ---------------- PF Configuration ---------------- */
+                PFCutOffAmt: context.pfCutOffAmt,
+                PFEPFPercentage: context.pfEPFPercentage,
+                PFEPSPercentage: context.pfEPSPercentage,
+                PFEmployerEPFPercentage: context.pfEmployerEPFPercentage,
+                PFEmployerAcc02Percentage: context.pfEmployerAcc02Percentage,
+                PFEmployerAcc21Percentage: context.pfEmployerAcc21Percentage,
+                PFEmployerAcc22Percentage: context.pfEmployerAcc22Percentage,
+                PFEPSCutOffAge: context.pfEPSCutOffAge,
+                PFFromAmt: context.pfFromAmt,
+                PFToAmt: context.pfToAmt,
+                /* ---------------- ESIC Details ---------------- */
+                ESICApplicable: context.esicApplicable,
+                ESICCode: context.esicCode,
+                ESICWages: context.esicWages,
+                EmployeeESIC: context.employeeESIC,
+                EmployerESIC: context.employerESIC,
+                /* ---------------- ESIC Configuration ---------------- */
+                ESICCutOffAmt: context.esicCutOffAmt,
+                ESICEmployeePercentage: context.esicEmployeePercentage,
+                ESICEmployerPercentage: context.esicEmployerPercentage,
+                ESICFromAmt: context.esicFromAmt,
+                ESICToAmt: context.esicToAmt,
+                /* ---------------- PT Details ---------------- */
+                PTApplicable: context.ptApplicable,
+                PTCode: context.ptCode,
+                EmployeePT: context.employeePT,
+                /* ---------------- PT Configuration ---------------- */
+                PTTaxRate: context.ptTaxRate,
+                PTFromAmt: context.ptFromAmt,
+                PTToAmt: context.ptToAmt,
+                /* ---------------- Tax Summary ---------------- */
+                TotalStatutoryDeductions:
+                    context.totalStatutoryDeductions,
+                BankSalaryAfterTax:
+                    context.bankSalaryAfterTax,
+                /* ---------------- advanced deduction ---------------- */
+                TotalOutstandingAdvance: context.totalOutstandingAdvance,
+                CashSalaryAfterAdvance: context.cashSalaryAfterAdvance,
+                /* ---------------- final salary ---------------- */
+                NetPayableSalary: context.netPayableSalary,
 
-        return {
-            EmpMstId: employee.EmpMstId,
-            EmpCode: employee.EmpCode,
-            EmpFullName: employee.EmpFullName,
-            SalaryType: salaryRecord.SalaryType,
-            BaseSalary: context.baseSalary,
-            DivisorDays: context.divisorDays,
-            PayableDays: context.payableDays,
-            TotalMinutesWorked: context.totalMinutesWorked,
-            PerDaySalary: context.perDaySalary,
-            PerMinuteRate: context.perMinuteRate,
-            GrossSalary: context.grossSalary
-        };
-    });
+                SalaryCalculationMethod: context.salaryCalculationMethod,
+                Message: context.message,
+                TaxMessages: context.taxMessages
+            };
+        }));
+
+    const filteredResults = results.filter(Boolean);
 
     return {
         month,
         departmentId,
         totalEmployees: employees.length,
         calculatedEmployees: results.length,
-        data: results
+        data: filteredResults
     };
 }
 

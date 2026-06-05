@@ -10,7 +10,6 @@ const { FORMS } = require('../../constants/permissions.constants');
 
 router.use(verifyToken);
 router.get("/", checkPermission(FORMS.ATTENDANCE, 'view'), asyncHandler(ctrl.getPunchLogs));
-router.get("/manual-calculate", checkPermission(FORMS.ATTENDANCE, 'view'), asyncHandler(ctrl.manualCalculateDailySummary));
 router.put("/", checkPermission(FORMS.ATTENDANCE, 'edit'), asyncTransactionHandler(ctrl.updatePunchDay));
 router.post("/sync-punch", checkPermission(FORMS.ATTENDANCE, 'view'), asyncHandler(ctrl.syncPunchNow));
 

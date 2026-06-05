@@ -13,7 +13,7 @@ exports.createEmployee = async (req, res, next) => {
         BankSalary,
         SalaryType,
         EffectiveMonth,
-        DateOfJoining
+        DateOfJoining,
     } = req.body;
 
     if (!EmpCode) throw new AppError("Employee Code (EmpCode) is required.", 400);
@@ -530,5 +530,46 @@ exports.deleteSalaryHistory = async (req, res, next) => {
     return res.status(200).json({
         success: true,
         message: "Salary history deleted successfully and previous salary restored."
+    });
+};
+
+exports.getEmployeeBasicInfo = async (req, res, next) => {
+    const { empCode } = req.params;
+
+    if (!empCode) {
+        throw new AppError("Employee Code is required.", 400);
+    }
+
+    // Added Id fields to the query
+    const query = `
+        SELECT TOP 1
+            e.EmpMstId,
+            e.EmpFullName,
+            dg.DesignationMstId,
+            dg.Designation,
+            c.CompanyMstId,
+            c.CompanyName,
+            d.DepartmentMstId,
+            d.Department
+        FROM EmployeeMst e
+        LEFT JOIN DesignationMst dg ON e.DesignationMstId = dg.DesignationMstId
+        LEFT JOIN CompanyMst c ON e.CompanyMstId = c.CompanyMstId
+        LEFT JOIN DepartmentMst d ON e.DepartmentMstId = d.DepartmentMstId
+        WHERE e.EmpCode = :empCode
+    `;
+
+    const result = await db.sequelize.query(query, {
+        replacements: { empCode },
+        type: QueryTypes.SELECT
+    });
+
+    if (result.length === 0) {
+        throw new AppError("Employee not found with the provided code.", 404);
+    }
+
+    return res.status(200).json({
+        success: true,
+        message: "Employee basic information retrieved successfully.",
+        data: result[0]
     });
 };

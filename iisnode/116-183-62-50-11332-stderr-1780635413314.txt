@@ -1,0 +1,823 @@
+(node:11332) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:11332) [DEP0123] DeprecationWarning: Setting the TLS ServerName to an IP address is not permitted by RFC 6066. This will be ignored in a future version.
+
+============================
+Hi there 👋. Looks like you are running TensorFlow.js in Node.js. To speed things up dramatically, install our node backend, which binds to TensorFlow C++, by running npm i @tensorflow/tfjs-node, or npm i @tensorflow/tfjs-node-gpu if you have CUDA. Then call require('@tensorflow/tfjs-node'); (-gpu suffix for CUDA) at the start of your program. Visit https://github.com/tensorflow/tfjs-node for more details.
+============================
+POLL ERROR: Error
+    at Query.run (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\mssql\query.js:107:25)
+    at C:\Attendance-API-Secured\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async MSSqlQueryInterface.select (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\abstract\query-interface.js:407:12)
+    at async PC.findAll (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1140:21)
+    at async PC.findOne (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1240:12)
+    at async PC.findByPk (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1221:12)
+    at async exports.pollCommand (C:\Attendance-API-Secured\controllers\pc.controller.js:265:16) {
+  name: 'SequelizeDatabaseError',
+  parent: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  original: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+  parameters: {}
+}
+POLL ERROR: Error
+    at Query.run (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\mssql\query.js:107:25)
+    at C:\Attendance-API-Secured\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async MSSqlQueryInterface.select (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\abstract\query-interface.js:407:12)
+    at async PC.findAll (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1140:21)
+    at async PC.findOne (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1240:12)
+    at async PC.findByPk (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1221:12)
+    at async exports.pollCommand (C:\Attendance-API-Secured\controllers\pc.controller.js:265:16) {
+  name: 'SequelizeDatabaseError',
+  parent: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  original: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+  parameters: {}
+}
+POLL ERROR: Error
+    at Query.run (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\mssql\query.js:107:25)
+    at C:\Attendance-API-Secured\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async MSSqlQueryInterface.select (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\abstract\query-interface.js:407:12)
+    at async PC.findAll (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1140:21)
+    at async PC.findOne (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1240:12)
+    at async PC.findByPk (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1221:12)
+    at async exports.pollCommand (C:\Attendance-API-Secured\controllers\pc.controller.js:265:16) {
+  name: 'SequelizeDatabaseError',
+  parent: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  original: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+  parameters: {}
+}
+POLL ERROR: Error
+    at Query.run (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\mssql\query.js:107:25)
+    at C:\Attendance-API-Secured\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async MSSqlQueryInterface.select (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\abstract\query-interface.js:407:12)
+    at async PC.findAll (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1140:21)
+    at async PC.findOne (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1240:12)
+    at async PC.findByPk (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1221:12)
+    at async exports.pollCommand (C:\Attendance-API-Secured\controllers\pc.controller.js:265:16) {
+  name: 'SequelizeDatabaseError',
+  parent: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  original: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+  parameters: {}
+}
+POLL ERROR: Error
+    at Query.run (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\mssql\query.js:107:25)
+    at C:\Attendance-API-Secured\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async MSSqlQueryInterface.select (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\abstract\query-interface.js:407:12)
+    at async PC.findAll (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1140:21)
+    at async PC.findOne (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1240:12)
+    at async PC.findByPk (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1221:12)
+    at async exports.pollCommand (C:\Attendance-API-Secured\controllers\pc.controller.js:265:16) {
+  name: 'SequelizeDatabaseError',
+  parent: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  original: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+  parameters: {}
+}
+POLL ERROR: Error
+    at Query.run (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\mssql\query.js:107:25)
+    at C:\Attendance-API-Secured\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async MSSqlQueryInterface.select (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\abstract\query-interface.js:407:12)
+    at async PC.findAll (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1140:21)
+    at async PC.findOne (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1240:12)
+    at async PC.findByPk (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1221:12)
+    at async exports.pollCommand (C:\Attendance-API-Secured\controllers\pc.controller.js:265:16) {
+  name: 'SequelizeDatabaseError',
+  parent: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  original: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+  parameters: {}
+}
+POLL ERROR: Error
+    at Query.run (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\mssql\query.js:107:25)
+    at C:\Attendance-API-Secured\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async MSSqlQueryInterface.select (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\abstract\query-interface.js:407:12)
+    at async PC.findAll (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1140:21)
+    at async PC.findOne (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1240:12)
+    at async PC.findByPk (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1221:12)
+    at async exports.pollCommand (C:\Attendance-API-Secured\controllers\pc.controller.js:265:16) {
+  name: 'SequelizeDatabaseError',
+  parent: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  original: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+  parameters: {}
+}
+POLL ERROR: Error
+    at Query.run (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\mssql\query.js:107:25)
+    at C:\Attendance-API-Secured\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async MSSqlQueryInterface.select (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\abstract\query-interface.js:407:12)
+    at async PC.findAll (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1140:21)
+    at async PC.findOne (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1240:12)
+    at async PC.findByPk (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1221:12)
+    at async exports.pollCommand (C:\Attendance-API-Secured\controllers\pc.controller.js:265:16) {
+  name: 'SequelizeDatabaseError',
+  parent: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  original: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+  parameters: {}
+}
+POLL ERROR: Error
+    at Query.run (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\mssql\query.js:107:25)
+    at C:\Attendance-API-Secured\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async MSSqlQueryInterface.select (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\abstract\query-interface.js:407:12)
+    at async PC.findAll (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1140:21)
+    at async PC.findOne (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1240:12)
+    at async PC.findByPk (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1221:12)
+    at async exports.pollCommand (C:\Attendance-API-Secured\controllers\pc.controller.js:265:16) {
+  name: 'SequelizeDatabaseError',
+  parent: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  original: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+  parameters: {}
+}
+POLL ERROR: Error
+    at Query.run (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\mssql\query.js:107:25)
+    at C:\Attendance-API-Secured\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async MSSqlQueryInterface.select (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\abstract\query-interface.js:407:12)
+    at async PC.findAll (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1140:21)
+    at async PC.findOne (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1240:12)
+    at async PC.findByPk (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1221:12)
+    at async exports.pollCommand (C:\Attendance-API-Secured\controllers\pc.controller.js:265:16) {
+  name: 'SequelizeDatabaseError',
+  parent: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  original: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+  parameters: {}
+}
+POLL ERROR: Error
+    at Query.run (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\mssql\query.js:107:25)
+    at C:\Attendance-API-Secured\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async MSSqlQueryInterface.select (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\abstract\query-interface.js:407:12)
+    at async PC.findAll (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1140:21)
+    at async PC.findOne (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1240:12)
+    at async PC.findByPk (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1221:12)
+    at async exports.pollCommand (C:\Attendance-API-Secured\controllers\pc.controller.js:265:16) {
+  name: 'SequelizeDatabaseError',
+  parent: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  original: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+  parameters: {}
+}
+POLL ERROR: Error
+    at Query.run (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\mssql\query.js:107:25)
+    at C:\Attendance-API-Secured\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async MSSqlQueryInterface.select (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\abstract\query-interface.js:407:12)
+    at async PC.findAll (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1140:21)
+    at async PC.findOne (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1240:12)
+    at async PC.findByPk (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1221:12)
+    at async exports.pollCommand (C:\Attendance-API-Secured\controllers\pc.controller.js:265:16) {
+  name: 'SequelizeDatabaseError',
+  parent: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  original: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+  parameters: {}
+}
+POLL ERROR: Error
+    at Query.run (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\mssql\query.js:107:25)
+    at C:\Attendance-API-Secured\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async MSSqlQueryInterface.select (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\abstract\query-interface.js:407:12)
+    at async PC.findAll (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1140:21)
+    at async PC.findOne (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1240:12)
+    at async PC.findByPk (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1221:12)
+    at async exports.pollCommand (C:\Attendance-API-Secured\controllers\pc.controller.js:265:16) {
+  name: 'SequelizeDatabaseError',
+  parent: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  original: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+  parameters: {}
+}
+POLL ERROR: Error
+    at Query.run (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\mssql\query.js:107:25)
+    at C:\Attendance-API-Secured\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async MSSqlQueryInterface.select (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\abstract\query-interface.js:407:12)
+    at async PC.findAll (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1140:21)
+    at async PC.findOne (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1240:12)
+    at async PC.findByPk (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1221:12)
+    at async exports.pollCommand (C:\Attendance-API-Secured\controllers\pc.controller.js:265:16) {
+  name: 'SequelizeDatabaseError',
+  parent: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  original: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+  parameters: {}
+}
+POLL ERROR: Error
+    at Query.run (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\mssql\query.js:107:25)
+    at C:\Attendance-API-Secured\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async MSSqlQueryInterface.select (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\abstract\query-interface.js:407:12)
+    at async PC.findAll (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1140:21)
+    at async PC.findOne (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1240:12)
+    at async PC.findByPk (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1221:12)
+    at async exports.pollCommand (C:\Attendance-API-Secured\controllers\pc.controller.js:265:16) {
+  name: 'SequelizeDatabaseError',
+  parent: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  original: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+  parameters: {}
+}
+POLL ERROR: Error
+    at Query.run (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\mssql\query.js:107:25)
+    at C:\Attendance-API-Secured\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async MSSqlQueryInterface.select (C:\Attendance-API-Secured\node_modules\sequelize\lib\dialects\abstract\query-interface.js:407:12)
+    at async PC.findAll (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1140:21)
+    at async PC.findOne (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1240:12)
+    at async PC.findByPk (C:\Attendance-API-Secured\node_modules\sequelize\lib\model.js:1221:12)
+    at async exports.pollCommand (C:\Attendance-API-Secured\controllers\pc.controller.js:265:16) {
+  name: 'SequelizeDatabaseError',
+  parent: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  original: RequestError: Invalid object name 'PC'.
+      at RequestTokenHandler.onErrorMessage (C:\Attendance-API-Secured\node_modules\tedious\lib\token\handler.js:286:21)
+      at Readable.<anonymous> (C:\Attendance-API-Secured\node_modules\tedious\lib\token\token-stream-parser.js:19:33)
+      at Readable.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushObjectMode (node:internal/streams/readable:536:3)
+      at Readable.push (node:internal/streams/readable:391:5)
+      at nextAsync (node:internal/streams/from:194:22)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+    code: 'EREQUEST',
+    number: 208,
+    state: 1,
+    class: 16,
+    serverName: '116-183-62-50',
+    procName: '',
+    lineNumber: 1,
+    sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+    parameters: undefined
+  },
+  sql: "SELECT [PcId], [PcName], [IpAddress], [MacAddress], [OsInfo], [Status], [LastSeen], [PendingCommand], [Active] FROM [PC] AS [PC] WHERE [PC].[PcId] = N'910680e9-5d58-4a21-87e5-6e14bc44b342';",
+  parameters: {}
+}

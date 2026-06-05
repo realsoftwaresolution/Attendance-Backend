@@ -34,6 +34,10 @@ function employeeMstModel(sequelize) {
 
         EmpAddress: { type: DataTypes.STRING },
         DateOfJoining: { type: DataTypes.STRING },
+        DateOfBirth: {
+            type: DataTypes.STRING(10),
+            allowNull: true
+        },
         EmpGrp: { type: DataTypes.STRING(30), allowNull: true },
 
         IsPFApplicable: {

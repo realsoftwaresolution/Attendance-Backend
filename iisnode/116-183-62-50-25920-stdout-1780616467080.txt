@@ -2,5 +2,5 @@
 ✔ Face-api models loaded successfully
 ✔ WebSocket server running
 ✔ Initializing all schedulers...
-🚀 Server running on http://localhost:\\.\pipe\20b96516-5132-49db-99a2-4f6e814d6f2b
+🚀 Server running on http://localhost:\\.\pipe\94a5f1ac-65f9-4946-a242-55026fdb1fee
 ✔ Database initialized with 37 dynamic models

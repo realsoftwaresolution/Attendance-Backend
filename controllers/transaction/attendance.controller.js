@@ -265,19 +265,3 @@ exports.syncPunchNow = async (req, res, next) => {
     });
 
 };
-
-exports.manualCalculateDailySummary = async (req, res, next) => {
-    const { departmentId, month } = req.query;
-
-    if (!departmentId || !month) {
-        return res.status(400).json({ success: false, message: "DepartmentId and month are required." });
-    }
-
-   const result = await calculateDepartmentSalary({ departmentId, month });
-
-    res.json({
-        success: true,
-        message: `Summary calculation completed for department ${departmentId} for ${month}`,
-        result
-    });
-}

@@ -76,7 +76,6 @@ class AttendanceEngine {
 
         // --- 2. RUN ACTUAL PUNCH CALCULATIONS ---------------------------------------------
         if (!logs?.length) {
-            console.log('[ENGINE_EMPTY_LOGS]', { dateStr });
             return metrics;
         }
 

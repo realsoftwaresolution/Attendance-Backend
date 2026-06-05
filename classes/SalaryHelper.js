@@ -87,25 +87,110 @@ class SalaryHelper {
         return this.getDaysInMonth(monthStr) - this.getSundayCount(monthStr);
     }
 
-    static isAbsentLikeStatus(status) {
-        return ['Absent', 'Invalid Log'].includes(status);
+    /* --------------------------- Audit metrix update -------------------------- */
+    static updateSundayAudit(day, context, setting) {
+
+        if (!day.isSunday) {
+            return;
+        }
+
+        const isPaidSunday =
+            this.shouldPaySunday(
+                day,
+                context.attendanceMap,
+                setting
+            );
+
+        if (setting.ApplySundayInOvertime) {
+
+            if (
+                this.parseHHMMToMinutes(day.FinalTotalHours) > 0
+            ) {
+                context.paidSundayCount++;
+            } else {
+                context.unpaidSundayCount++;
+            }
+
+            return;
+        }
+
+        if (isPaidSunday) {
+            context.paidSundayCount++;
+        } else {
+            context.unpaidSundayCount++;
+        }
     }
 
-    static getPayableDaysForDayWiseCal(day, attendanceRecords, setting) {
+    static updateHolidayAudit(day, context, setting) {
+
+        if (!day.IsHoliday) {
+            return;
+        }
+
+        if (setting.ApplyHolidayOnSalaryCalculation) {
+            context.paidHolidayCount++;
+        } else {
+            context.unpaidHolidayCount++;
+        }
+    }
+
+    /* ---------------------------- attendance metrix --------------------------- */
+    static updateAttendanceAudit(day, context, setting) {
+        const status = this.getAttendanceStatus(day, context, setting);
+
+        switch (status) {
+            case 'PRESENT':
+                context.totalPresentDays++;
+                if (!day.isSunday && !day.IsHoliday) {
+                    context.totalNormalPresentDays++;
+                }
+                break;
+            case 'ABSENT': context.totalAbsentDays += 1; break;
+            case 'HALF': context.totalHalfDays += 1; break;
+        }
+    }
+
+    static getAttendanceStatus(day, context, setting) {
+        // 1. Sunday Handling
+        if (day.isSunday) {
+            if (setting.ApplySundayInAbsentDay) return 'ABSENT';
+            if (setting.ApplySundayAsPresentDay) {
+                return this.shouldPaySunday(day, context.attendanceMap, setting) ? 'PRESENT' : 'ABSENT';
+            }
+            return null; // Sunday Overtime or ignored
+        }
+
+        // 2. Holiday Handling
+        if (day.IsHoliday) {
+            return setting.ApplyHolidayOnSalaryCalculation ? 'PRESENT' : 'ABSENT';
+        }
+
+        // 3. Absenteeism Handling
+        const isAbsent = ['Absent', 'Invalid Log'].includes(day.Status);
+        if (isAbsent) return 'ABSENT';
+
+        // 4. Half-Day Handling
+        if (day.Status === 'Half Day') {
+            return setting.ApplyHalfDayOnSalaryCalculation ? 'HALF' : 'PRESENT';
+        }
+
+        // 5. Default: Present
+        return 'PRESENT';
+    }
+
+    static isAbsentLikeStatus(status) {
+        return status === 'Absent' || status === 'Invalid Log';
+    }
+
+    static getPayableDaysForDayWiseCal(day, attendanceMap, setting) {
 
         /* --------------------------- 1. Sunday Handling --------------------------- */
 
-        const isSunday = moment(day.attendanceDate).day() === 0;
+        const isSunday = day.isSunday;
 
         // Sunday as Present
         if (isSunday && setting.ApplySundayAsPresentDay) {
-            return this.shouldPaySunday(
-                day,
-                attendanceRecords,
-                setting
-            )
-                ? 1
-                : 0;
+            return this.shouldPaySunday(day, attendanceMap, setting) ? 1 : 0;
         }
 
         // Sunday as Absent
@@ -137,61 +222,42 @@ class SalaryHelper {
         return 1;
     }
 
-    static shouldPaySunday(day, attendanceRecords, setting) {
+    static shouldPaySunday(day, attendanceMap, setting) {
+        // 1. Guard Clause: Policy check
+        if (!setting.ApplySundayAsPresentDay) return false;
 
-        if (!setting.ApplySundayAsPresentDay) {
-            return false;
+        // 2. Cache check: Return memoized result if already computed
+        if (day.isPaidSunday !== undefined) return day.isPaidSunday;
+
+        // 3. Status retrieval
+        const prevStatus = attendanceMap.get(day.prevDateKey)?.Status;
+        const nextStatus = attendanceMap.get(day.nextDateKey)?.Status;
+
+        const prevAbsent = this.isAbsentLikeStatus(prevStatus);
+        const nextAbsent = this.isAbsentLikeStatus(nextStatus);
+
+        // 4. Rule Evaluation
+        const isDisqualified =
+            (setting.MarkSundayAbsentIfBothDaysAbsent && prevAbsent && nextAbsent) ||
+            (setting.MarkSundayAbsentIfPreviousDayAbsent && prevAbsent) ||
+            (setting.MarkSundayAbsentIfNextDayAbsent && nextAbsent);
+
+        // 5. Cache and return
+        day.isPaidSunday = !isDisqualified;
+        return day.isPaidSunday;
+    }
+
+    static getSalaryDivisor(setting, month) {
+        if (setting.SalaryCalculateOnCalendarDay) {
+            return this.getDaysInMonth(month);
         }
-
-        const currentDate = moment(day.attendanceDate);
-
-        const previousDay = attendanceRecords.find(x =>
-            moment(x.attendanceDate).isSame(
-                currentDate.clone().subtract(1, 'day'),
-                'day'
-            )
-        );
-
-        const nextDay = attendanceRecords.find(x =>
-            moment(x.attendanceDate).isSame(
-                currentDate.clone().add(1, 'day'),
-                'day'
-            )
-        );
-
-        const prevAbsent =
-            previousDay
-                ? this.isAbsentLikeStatus(previousDay.Status)
-                : false;
-
-        const nextAbsent =
-            nextDay
-                ? this.isAbsentLikeStatus(nextDay.Status)
-                : false;
-
-        if (
-            setting.MarkSundayAbsentIfBothDaysAbsent &&
-            prevAbsent &&
-            nextAbsent
-        ) {
-            return false;
+        if (setting.SalaryCalculateOnCalendarDayWithoutSunday) {
+            return this.getMonthWorkingDays(month);
         }
-
-        if (
-            setting.MarkSundayAbsentIfPreviousDayAbsent &&
-            prevAbsent
-        ) {
-            return false;
+        if (setting.SalaryCalculateOnWorkingDay) {
+            return Number(setting.WorkingDays || 0);
         }
-
-        if (
-            setting.MarkSundayAbsentIfNextDayAbsent &&
-            nextAbsent
-        ) {
-            return false;
-        }
-
-        return true;
+        return 0;
     }
 }
 

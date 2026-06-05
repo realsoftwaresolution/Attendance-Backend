@@ -410,3 +410,128 @@ exports.getSystemMetadata = async (req, res) => {
         });
     }
 };
+
+exports.getUsers = async (req, res) => {
+    const users = await db.UserMst.findAll({
+        attributes: [
+            'UserMstId',
+            'Username',
+            'UserGrp',
+            'Active',
+            'createdAt',
+            'updatedAt'
+        ],
+        where: {
+            IsDelete: false
+        },
+        order: [['UserMstId', 'DESC']]
+    });
+
+    return res.status(200).json({
+        success: true,
+        data: users
+    });
+};
+
+exports.getUserDetails = async (req, res) => {
+    try {
+        const { UserMstId } = req.params;
+
+        const user = await db.UserMst.findOne({
+            attributes: [
+                'UserMstId',
+                'Username',
+                'Active',
+                'UserGrp'
+            ],
+            where: {
+                UserMstId,
+                IsDelete: false
+            }
+        });
+
+        if (!user) {
+            throw new AppError("User not found", 404);
+        }
+
+        const navigationQuery = `
+            SELECT
+                mm.MainMenuMstId,
+                mm.MainMenuName,
+                (
+                    SELECT
+                        m.MenuMstId,
+                        m.MenuName,
+                        ISNULL(ump.isCreate, 0) AS isCreate,
+                        ISNULL(ump.isEdit, 0) AS isEdit,
+                        ISNULL(ump.isDelete, 0) AS isDelete,
+                        ISNULL(ump.isView, 0) AS isView
+                    FROM MenuMst m
+                    LEFT JOIN UserMenuMst ump
+                        ON ump.MenuMstId = m.MenuMstId
+                        AND ump.UserMstId = ${UserMstId}
+                    WHERE m.MainMenuMstId = mm.MainMenuMstId
+                      AND m.Active = 1
+                    ORDER BY m.SortId, m.MenuName
+                    FOR JSON PATH
+                ) AS Menus
+            FROM MainMenuMst mm
+            WHERE mm.Active = 1
+            ORDER BY mm.MainMenuName
+        `;
+
+        const reportsQuery = `
+            SELECT
+                rt.ReportTypeMstId,
+                rt.ReportTypeName,
+                (
+                    SELECT
+                        srt.SubReportTypeMstId,
+                        srt.SubReportTypeName,
+                        CAST(ISNULL(urp.isView, 0) AS BIT) AS isView
+                    FROM SubReportTypeMst srt
+                    LEFT JOIN UserReportMst urp
+                        ON urp.SubReportTypeMstId = srt.SubReportTypeMstId
+                        AND urp.UserMstId = ${UserMstId}
+                    WHERE srt.ReportTypeMstId = rt.ReportTypeMstId
+                      AND srt.Active = 1
+                    ORDER BY srt.SortId
+                    FOR JSON PATH
+                ) AS SubReports
+            FROM ReportTypeMst rt
+            WHERE rt.Active = 1
+            ORDER BY rt.ReportTypeName
+        `;
+
+        const navigation = await db.sequelize.query(
+            navigationQuery,
+            { type: QueryTypes.SELECT }
+        );
+
+        const reports = await db.sequelize.query(
+            reportsQuery,
+            { type: QueryTypes.SELECT }
+        );
+
+        return res.status(200).json({
+            UserMstId: user.UserMstId,
+            Username: user.Username,
+            Active: user.Active,
+            UserGrp: user.UserGrp,
+            navigation: navigation.map(x => ({
+                ...x,
+                Menus: x.Menus ? JSON.parse(x.Menus) : []
+            })),
+            reports: reports.map(x => ({
+                ...x,
+                SubReports: x.SubReports
+                    ? JSON.parse(x.SubReports)
+                    : []
+            }))
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: error.message
+        });
+    }
+};

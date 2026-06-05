@@ -17,8 +17,15 @@ const asyncTransactionHandler = (handler) => {
 
         } catch (err) {
 
-            if (!transaction.finished) {
-                await transaction.rollback();
+            try {
+                if (!transaction.finished) {
+                    await transaction.rollback();
+                }
+            } catch (rollbackErr) {
+                console.error(
+                    'Rollback failed:',
+                    rollbackErr.message
+                );
             }
 
             next(err);

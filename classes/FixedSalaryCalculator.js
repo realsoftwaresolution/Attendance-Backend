@@ -1,196 +1,157 @@
+const AdvanceManager = require('./AdvanceManager');
+const FinalSalaryManager = require('./FinalSalaryManager');
 const SalaryHelper = require('./SalaryHelper');
-const moment = require('moment-timezone');
+const TaxManager = require('./taxes/TaxManager');
 
 class FixedSalaryCalculator {
 
-    calculate(context) {
+    async calculate(context) {
+        const { setting, salaryRecord } = context;
+        const totalSalary = Number(salaryRecord?.TotalSalary || 0);
 
-        const {
-            setting,
-            salaryRecord,
-            attendanceRecords,
-            month
-        } = context;
-
-        const totalSalary = Number(
-            salaryRecord?.TotalSalary || 0
-        );
-
-        context.baseSalary = totalSalary;
-
-        if (!totalSalary) {
+        /* ----------- 1. Guard Clause: Handle zero salary immediately ----------- */
+        if (totalSalary <= 0) {
+            context.baseSalary = 0;
+            context.message = 'Salary calculation skipped because employee salary is zero.';
+            context.isSkipped = true;
             return context;
         }
+        context.baseSalary = totalSalary;
 
+        /* --------------------- 2. Select and Execute Strategy --------------------- */
         if (setting.SalaryCalculateOnDay) {
+            context.salaryCalculationMethod = 'DAY';
             this.calculateDaySalary(context);
+            context.message = 'Salary calculated using day-wise method.';
+        } else if (setting.SalaryCalculateOnHours) {
+            context.salaryCalculationMethod = 'HOUR';
+            this.calculateHourlySalary(context);
+            context.message = 'Salary calculated using hourly method.';
         }
 
-        if (setting.SalaryCalculateOnHours) {
-            this.calculateHourlySalary(context);
-        }
+        /* ---------------- 3. Salary Distribution ---------------- */
+        this.calculateSalaryDistribution(context);
+
+        /* ---------------- 4. Tax Calculation ---------------- */
+        await TaxManager.calculate(context);
+        /* ---------------- 5. Advanced Calculation ---------------- */
+        await AdvanceManager.calculate(context);
+        /* ---------------- 6. Fianl Salary Calculation ---------------- */
+        FinalSalaryManager.calculate(context);
 
         return context;
     }
 
     calculateDaySalary(context) {
+        const { setting, attendanceRecords, baseSalary, month } = context;
 
-        const {
-            setting,
-            attendanceRecords,
-            baseSalary,
-            month
-        } = context;
+        // 1. Resolve divisor using the extracted helper
+        context.salaryDivisorDays = SalaryHelper.getSalaryDivisor(setting, month);
 
-        let divisorDays = 0;
-
-        if (setting.SalaryCalculateOnCalendarDay) {
-            divisorDays =
-                SalaryHelper.getDaysInMonth(month);
-        }
-        else if (
-            setting.SalaryCalculateOnCalendarDayWithoutSunday
-        ) {
-            divisorDays =
-                SalaryHelper.getMonthWorkingDays(month);
-        }
-        else if (
-            setting.SalaryCalculateOnWorkingDay
-        ) {
-            divisorDays =
-                Number(setting.WorkingDays || 0);
-        }
-
-        let payableDays = 0;
-
+        // 2. Aggregate payable days
+        let salaryPayableDays = 0;
         for (const day of attendanceRecords) {
-            payableDays += SalaryHelper.getPayableDaysForDayWiseCal(day, attendanceRecords, setting);
+            // Run audit hooks
+            SalaryHelper.updateSundayAudit(day, context, setting);
+            SalaryHelper.updateHolidayAudit(day, context, setting);
+            SalaryHelper.updateAttendanceAudit(day, context, setting);
+
+            salaryPayableDays += SalaryHelper.getPayableDaysForDayWiseCal(
+                day,
+                context.attendanceMap,
+                setting
+            );
         }
 
-        const perDaySalary =
-            divisorDays > 0
-                ? baseSalary / divisorDays
-                : 0;
+        // 3. Financial calculations
+        const salaryPerDayRate = context.salaryDivisorDays > 0
+            ? baseSalary / context.salaryDivisorDays
+            : 0;
 
-        const grossSalary =
-            payableDays * perDaySalary;
-
-        context.divisorDays = divisorDays;
-        context.payableDays = payableDays;
-
-        context.perDaySalary =
-            SalaryHelper.roundMoney(
-                perDaySalary
-            );
-
-        context.grossSalary =
-            SalaryHelper.roundMoney(
-                grossSalary
-            );
+        context.salaryPayableDays = salaryPayableDays;
+        context.salaryPerDayRate = SalaryHelper.roundMoney(salaryPerDayRate);
+        context.grossSalary = SalaryHelper.roundMoney(salaryPayableDays * salaryPerDayRate);
     }
 
     calculateHourlySalary(context) {
+        const { setting, attendanceRecords, baseSalary, month } = context;
 
-        const {
-            setting,
-            attendanceRecords,
-            baseSalary,
-            month
-        } = context;
-
-        let divisorDays = 0;
-
-        if (setting.SalaryCalculateOnCalendarDay) {
-            divisorDays =
-                SalaryHelper.getDaysInMonth(month);
-        }
-        else if (
-            setting.SalaryCalculateOnCalendarDayWithoutSunday
-        ) {
-            divisorDays =
-                SalaryHelper.getMonthWorkingDays(month);
-        }
-        else if (
-            setting.SalaryCalculateOnWorkingDay
-        ) {
-            divisorDays =
-                Number(setting.WorkingDays || 0);
-        }
-
+        // 1. Calculate Expected Minutes (Divisor logic reused)
+        const salaryDivisorDays = SalaryHelper.getSalaryDivisor(setting, month);
         const perDayHours = Number(setting.PerDayHours || 8);
+        context.salaryExpectedMinutes = salaryDivisorDays * perDayHours * 60;
 
-        let expectedMinutes =
-            divisorDays * perDayHours * 60;
-
+        // 2. Aggregate Actual Minutes
         let actualMinutes = 0;
-
         for (const day of attendanceRecords) {
-            const isSunday = moment(day.attendanceDate).day() === 0;
-            let workedMinutes = SalaryHelper.parseHHMMToMinutes(day.FinalTotalHours);
-            const standardMinutes = perDayHours * 60;
+            // Run audit hooks
+            SalaryHelper.updateSundayAudit(day, context, setting);
+            SalaryHelper.updateHolidayAudit(day, context, setting);
+            SalaryHelper.updateAttendanceAudit(day, context, setting);
 
-
-            /* ------------ 0. Prepare worked minutes by restoring deductions ----------- */
-
-            if (setting.AllowLunchBreak) {
-                workedMinutes += SalaryHelper.parseHHMMToMinutes(day.LunchBreak);
-            }
-
-            if (!setting.ApplyLateOnSalaryCalculation) {
-                workedMinutes += SalaryHelper.parseHHMMToMinutes(day.LateMinutes);
-                workedMinutes += SalaryHelper.parseHHMMToMinutes(day.EarlyOutMinutes);
-            }
-
-            /* --------- 1. Skip processing entirely if configured for "Absent" --------- */
-            if (isSunday && setting.ApplySundayInAbsentDay) {
-                continue;
-            }
-
-            /* -------------------- 2. Determine payment for the day -------------------- */
-            let dailyMinutes = 0;
-
-            if (isSunday && setting.ApplySundayAsPresentDay) {
-                const shouldPaySunday = SalaryHelper.shouldPaySunday(day, attendanceRecords, setting);
-                if (!shouldPaySunday) continue;
-                dailyMinutes = standardMinutes;
-            }
-            else if (isSunday && setting.ApplySundayInOvertime) {
-                dailyMinutes = workedMinutes;
-            }
-            else if (day.IsHoliday && setting.ApplyHolidayOnSalaryCalculation) {
-                dailyMinutes = standardMinutes;
-            }
-            else {
-                dailyMinutes = workedMinutes;
-            }
-
-            actualMinutes += dailyMinutes;
+            actualMinutes += this.getDailyPayableMinutes(day, context, setting, perDayHours * 60);
         }
 
+        // 3. Financial calculations
+        const salaryPerMinuteRate = context.salaryExpectedMinutes > 0
+            ? baseSalary / context.salaryExpectedMinutes
+            : 0;
 
-        const perMinuteRate =
-            expectedMinutes > 0
-                ? baseSalary / expectedMinutes
-                : 0;
+        context.salaryPayableMinutes = actualMinutes;
+        context.salaryPerMinuteRate = SalaryHelper.roundRate(salaryPerMinuteRate);
+        context.grossSalary = SalaryHelper.roundMoney(actualMinutes * salaryPerMinuteRate);
+    }
+
+    getDailyPayableMinutes(day, context, setting, standardMinutes) {
+        // 0. Prepare worked minutes with restored deductions
+        let workedMinutes = SalaryHelper.parseHHMMToMinutes(day.FinalTotalHours);
+        if (setting.AllowLunchBreak) workedMinutes += SalaryHelper.parseHHMMToMinutes(day.LunchBreak);
+        if (!setting.ApplyLateOnSalaryCalculation) {
+            workedMinutes += SalaryHelper.parseHHMMToMinutes(day.LateMinutes);
+            workedMinutes += SalaryHelper.parseHHMMToMinutes(day.EarlyOutMinutes);
+        }
+
+        // 1. Skip if configured for "Absent"
+        if (day.isSunday && setting.ApplySundayInAbsentDay) return 0;
+
+        // 2. Determine payment
+        if (day.isSunday && setting.ApplySundayAsPresentDay) {
+            return SalaryHelper.shouldPaySunday(day, context.attendanceMap, setting) ? standardMinutes : 0;
+        }
+
+        if (day.isSunday && setting.ApplySundayInOvertime) return workedMinutes;
+
+        if (day.IsHoliday && setting.ApplyHolidayOnSalaryCalculation) return standardMinutes;
+
+        return workedMinutes;
+    }
+
+    calculateSalaryDistribution(context) {
 
         const grossSalary =
-            actualMinutes * perMinuteRate;
+            Number(context.grossSalary || 0);
 
-        context.expectedMinutes =
-            expectedMinutes;
+        const bankLimit =
+            Number(context.salaryRecord?.BankSalary || 0);
 
-        context.totalMinutesWorked =
-            actualMinutes;
+        if (grossSalary <= 0) {
+            context.bankPayableSalary = 0;
+            context.cashPayableSalary = 0;
+            return;
+        }
 
-        context.perMinuteRate =
-            SalaryHelper.roundRate(
-                perMinuteRate
-            );
+        /* ----------------------------- First fill bank ---------------------------- */
+        const bankPayable =
+            Math.min(grossSalary, bankLimit);
 
-        context.grossSalary =
-            SalaryHelper.roundMoney(
-                grossSalary
-            );
+        /* ------------------------- Remaining goes to cash ------------------------- */
+        const cashPayable =
+            Math.max(0, grossSalary - bankPayable);
+
+        context.bankPayableSalary =
+            SalaryHelper.roundMoney(bankPayable);
+        context.cashPayableSalary =
+            SalaryHelper.roundMoney(cashPayable);
     }
 }
 
