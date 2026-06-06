@@ -317,7 +317,7 @@ exports.getAllEmployees = async (req, res, next) => {
 
         ${searchSql}
 
-        ORDER BY e.SortId ASC, e.EmpMstId DESC
+        ORDER BY e.EmpMstId DESC
         OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY
     `, {
         replacements,
