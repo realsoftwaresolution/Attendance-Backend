@@ -33,6 +33,13 @@ class SalaryHelper {
         return parsed;
     }
 
+    static calculateDailyNetOTMinutes(otHoursStr, otGapStr) {
+        const grossOTMinutes = this.parseHHMMToMinutes(otHoursStr);
+        const gapOTMinutes = this.parseHHMMToMinutes(otGapStr);
+        const netOT = grossOTMinutes - gapOTMinutes;
+        return netOT > 0 ? netOT : 0;
+    }
+
     /* -------------------------- Financial Formatting -------------------------- */
 
     static roundMoney(value) {

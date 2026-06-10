@@ -1,63 +1,100 @@
 const MAIN_MENU = Object.freeze({
-    MASTER: 'Master',
-    TRANSACTION: 'Transaction',
-    REPORT: 'Report',
-    UTILITY: 'Utility'
+  MASTER: "Master",
+  TRANSACTION: "Transaction",
+  REPORT: "Report",
+  UTILITY: "Utility",
 });
 
 const FORMS = Object.freeze({
-    // Master Module
-    EMPLOYEE: 'FrmEmployee',
-    DEPARTMENT: 'FrmDepartment',
-    COMPANY: 'FrmCompany',
-    HOUR_CATEGORY: 'FrmHourCategory',
-    DESIGNATION: 'FrmDesignation',
-    HOLIDAY: 'FrmHoliday',
-    ADVANCED_ENTRY: 'FrmAdvancedEntry',
-    COUNTER: 'FrmCounter',
+  // Master Module
+  EMPLOYEE: "FrmEmployee",
+  DEPARTMENT: "FrmDepartment",
+  COMPANY: "FrmCompany",
+  HOUR_CATEGORY: "FrmHourCategory",
+  DESIGNATION: "FrmDesignation",
+  HOLIDAY: "FrmHoliday",
+  ADVANCED_ENTRY: "FrmAdvancedEntry",
+  COUNTER: "FrmCounter",
 
-    PF_MASTER: 'FrmPFMst',
-    PT_MASTER: 'FrmPTMst',
-    ESIC_MASTER: 'FrmESICMst',
+  PF_MASTER: "FrmPFMst",
+  PT_MASTER: "FrmPTMst",
+  ESIC_MASTER: "FrmESICMst",
 
-    // Transaction Module
-    ATTENDANCE: 'FrmAttendance',
-    SHIFT_ENTRY: 'FrmShiftEntry',
-    HOUR_CALCULATION: 'FrmHourCalculation',
-    SALARY_CALCULATION: 'FrmSalaryCalculation',
+  // Transaction Module
+  ATTENDANCE: "FrmAttendance",
+  SHIFT_ENTRY: "FrmShiftEntry",
+  HOUR_CALCULATION: "FrmHourCalculation",
+  SALARY_CALCULATION: "FrmSalaryCalculation",
 
-    // Utility Module
-    BACKUP: 'FrmBackup',
-    MASTER_SETTINGS: 'FrmMasterSettings',
-    IMPORT_DATA: 'FrmImportData',
-    FORM_16: 'FrmForm16',
-    USER_MASTER: 'FrmUserMaster'
+  // Utility Module
+  BACKUP: "FrmBackup",
+  MASTER_SETTINGS: "FrmMasterSettings",
+  IMPORT_DATA: "FrmImportData",
+  FORM_16: "FrmForm16",
+  USER_MASTER: "FrmUserMaster",
 });
 
 const REPORT_TYPES = Object.freeze({
-    DAILY: 'DAILY',
-    MONTHLY: 'MONTHLY',
-    SALARY: 'SALARY'
+  IN_OUT: "In Out",
+  SALARY: "Salary",
+  INVALID_LOGS: "Invalid Logs",
+});
+
+const REPORT_FORMS = Object.freeze({
+  DAILY_IN_OUT: "RptDailyInOut",
+  DEPARTMENT_WISE_IN_OUT: "RptDepartmentWiseInOut",
+  EMPLOYEE_WISE_IN_OUT: "RptEmployeeWiseInOut",
+
+  SALARY_SLIP: "RptSalarySlip",
+  SALARY_DETAIL: "RptSalaryDetail",
+  SALARY_SUMMARY: "RptSalarySummary",
+
+  INVALID_LOGS_REPORT: "RptInvalidLogs",
 });
 
 const SUB_REPORTS = [
-    { name: 'Date Wise', form: 'RptDateWise', type: REPORT_TYPES.DAILY },
-    { name: 'Employee Wise', form: 'RptEmployeeWise', type: REPORT_TYPES.DAILY },
-    { name: 'Department Wise', form: 'RptDepartmentWise', type: REPORT_TYPES.DAILY },
+  {
+    name: "Daily In/Out Report",
+    form: REPORT_FORMS.DAILY_IN_OUT,
+    type: REPORT_TYPES.IN_OUT,
+  },
+  {
+    name: "Department-Wise In/Out Report",
+    form: REPORT_FORMS.DEPARTMENT_WISE_IN_OUT,
+    type: REPORT_TYPES.IN_OUT,
+  },
+  {
+    name: "Employee-Wise In/Out Report",
+    form: REPORT_FORMS.EMPLOYEE_WISE_IN_OUT,
+    type: REPORT_TYPES.IN_OUT,
+  },
 
-    { name: 'Employee Wise', form: 'RptEmployeeWiseMonthly', type: REPORT_TYPES.MONTHLY },
-    { name: 'Department Wise', form: 'RptDepartmentWiseMonthly', type: REPORT_TYPES.MONTHLY },
-    { name: 'Hour Calculation', form: 'RptHourCalculation', type: REPORT_TYPES.MONTHLY },
-
-    { name: 'DepCode', form: 'RptDeptCode', type: REPORT_TYPES.SALARY },
-    { name: 'EmpCode', form: 'RptEmpCode', type: REPORT_TYPES.SALARY },
-    { name: 'Year', form: 'RptYear', type: REPORT_TYPES.SALARY },
-    { name: 'Month', form: 'RptMonth', type: REPORT_TYPES.SALARY }
+  {
+    name: "Salary Slip",
+    form: REPORT_FORMS.SALARY_SLIP,
+    type: REPORT_TYPES.SALARY,
+  },
+  {
+    name: "Salary Detail",
+    form: REPORT_FORMS.SALARY_DETAIL,
+    type: REPORT_TYPES.SALARY,
+  },
+  {
+    name: "Salary Summary",
+    form: REPORT_FORMS.SALARY_SUMMARY,
+    type: REPORT_TYPES.SALARY,
+  },
+  {
+    name: "Invalid Punch Logs Report",
+    form: REPORT_FORMS.INVALID_LOGS_REPORT,
+    type: REPORT_TYPES.INVALID_LOGS,
+  },
 ];
 
 module.exports = {
-    MAIN_MENU,
-    FORMS,
-    REPORT_TYPES,
-    SUB_REPORTS
+  MAIN_MENU,
+  FORMS,
+  REPORT_TYPES,
+  SUB_REPORTS,
+  REPORT_FORMS,
 };

@@ -23,6 +23,9 @@ router.use("/salary-calculation", require('./transaction/salary-calculation.rout
 /* ----------------------------- utility routes ----------------------------- */
 router.use("/master-settings", require('./utility/masterSetting.routes'));
 
+/* ----------------------------- reports routes ----------------------------- */
+router.use("/reports", require('./reports/reports.routes'));
+
 
 
 module.exports = router;

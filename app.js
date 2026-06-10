@@ -30,6 +30,19 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 
 /* --------------------------------- Routes --------------------------------- */
+// app.get("/api/system/seed", async (req, res, next) => {
+//   try {
+//     await seedDatabase();
+//     return res.status(200).json({ success: true, message: "Database seeding and configuration synced successfully." });
+//   } catch (error) {
+//     return res.status(500).json({ success: false, message: "Seeding failed", error: error.message });
+//   }
+// });
+
+
+app.get("/", (req, res) => {
+  res.json({ success: true, message: "Server is running", timestamp: new Date().toISOString() });
+});
 app.use('/api', require('./routes/index.routes'))
 app.use("/admin", require("./routes/admin.routes"));
 app.use("/pc", require("./routes/pc.routes"));
@@ -49,7 +62,6 @@ app.use(errorMiddleware);
     initializeSocket(server);
 
     initAllJobs();
-    // await seedDatabase();
 
     server.listen(PORT, "0.0.0.0", () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);

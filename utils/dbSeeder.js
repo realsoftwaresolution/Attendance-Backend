@@ -12,9 +12,6 @@ const { hashPassword } = require("./hash.utils");
 const seedDatabase = async () => {
     try {
 
-        // ==========================
-        // 1. Main Menus
-        // ==========================
         const mainMenus = [
             MAIN_MENU.MASTER,
             MAIN_MENU.TRANSACTION,
@@ -34,9 +31,6 @@ const seedDatabase = async () => {
             });
         }
 
-        // ==========================
-        // 2. Menus
-        // ==========================
         const menuItems = [
             { MenuName: "Employee", MainMenuName: MAIN_MENU.MASTER, FormName: FORMS.EMPLOYEE },
             { MenuName: "Department", MainMenuName: MAIN_MENU.MASTER, FormName: FORMS.DEPARTMENT },
@@ -88,9 +82,7 @@ const seedDatabase = async () => {
             }
         }
 
-        // ==========================
-        // 3. Report Types
-        // ==========================
+
         for (const reportTypeName of Object.values(REPORT_TYPES)) {
             await db.ReportTypeMst.findOrCreate({
                 where: {
@@ -103,9 +95,6 @@ const seedDatabase = async () => {
             });
         }
 
-        // ==========================
-        // 4. Sub Reports
-        // ==========================
         for (const sub of SUB_REPORTS) {
             const reportType = await db.ReportTypeMst.findOne({
                 where: {
@@ -132,9 +121,6 @@ const seedDatabase = async () => {
             }
         }
 
-        // ==========================
-        // 5. Create Realsoft Admin If Missing
-        // ==========================
         const [admin] = await db.UserMst.findOrCreate({
             where: {
                 Username: "realsoft"
@@ -152,9 +138,6 @@ const seedDatabase = async () => {
             }
         });
 
-        // ==========================
-        // 6. Sync Menu Permissions
-        // ==========================
         const allMenus = await db.MenuMst.findAll();
 
         for (const menu of allMenus) {
@@ -178,9 +161,6 @@ const seedDatabase = async () => {
             }
         }
 
-        // ==========================
-        // 7. Sync Report Permissions
-        // ==========================
         const allReports = await db.SubReportTypeMst.findAll();
 
         for (const report of allReports) {
