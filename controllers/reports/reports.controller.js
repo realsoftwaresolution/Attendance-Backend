@@ -19,7 +19,9 @@ const getReportDates = (FromDate, ToDate) => {
 };
 
 const buildReportQuery = (req, fromDate, toDate) => {
-  const { EmpCode, DepartmentMstId, CompanyMstId } = req.query;
+  // Added DesignationMstId to the destructured query parameters
+  const { EmpCode, DepartmentMstId, CompanyMstId, DesignationMstId } =
+    req.query;
 
   let whereClause = `WHERE 1=1`;
   const replacements = { FromDate: fromDate, ToDate: toDate };
@@ -36,6 +38,11 @@ const buildReportQuery = (req, fromDate, toDate) => {
     whereClause += ` AND E.CompanyMstId = :CompanyMstId`;
     replacements.CompanyMstId = CompanyMstId;
   }
+  // Added the DesignationMstId validation filter check
+  if (DesignationMstId) {
+    whereClause += ` AND E.DesignationMstId = :DesignationMstId`;
+    replacements.DesignationMstId = DesignationMstId;
+  }
 
   whereClause += ` AND CAST(P.punchTime AS DATE) BETWEEN :FromDate AND :ToDate`;
 
@@ -48,6 +55,7 @@ const buildReportQuery = (req, fromDate, toDate) => {
       E.EmpFullName,
       ISNULL(D.DepartmentMstId, 0) AS DepartmentMstId,
       ISNULL(D.Department, 'Unassigned') AS Department,
+      ISNULL(DG.DesignationMstId, 0) AS DesignationMstId, -- Helpful addition if frontend needs it
       ISNULL(DG.Designation, 'Unassigned') AS Designation,
       ISNULL(C.CompanyMstId, 0) AS CompanyMstId,
       ISNULL(C.CompanyName, 'Unassigned') AS CompanyName,
@@ -413,8 +421,14 @@ exports.getEmployeeWiseInOutReport = async (req, res, next) => {
 
 exports.getDetailedSalaryStatement = async (req, res, next) => {
   try {
-    const { CompanyMstId, DepartmentMstId, EmpCode, FromMonth, ToMonth } =
-      req.query;
+    const {
+      CompanyMstId,
+      DepartmentMstId,
+      DesignationMstId,
+      EmpCode,
+      FromMonth,
+      ToMonth,
+    } = req.query;
 
     // 1. Resolve dynamic Month Filters (Format expected: YYYY-MM)
     let startMonth = FromMonth;
@@ -440,6 +454,7 @@ exports.getDetailedSalaryStatement = async (req, res, next) => {
 
     if (CompanyMstId) whereClause.CompanyMstId = CompanyMstId;
     if (DepartmentMstId) whereClause.DepartmentMstId = DepartmentMstId;
+    if (DesignationMstId) whereClause.DesignationMstId = DesignationMstId;
     if (EmpCode) whereClause.EmpCode = EmpCode;
 
     // 3. Fetch Records from Database
@@ -537,7 +552,7 @@ exports.getInvalidLogsWithPunches = async (req, res, next) => {
   const fromDate =
     req.query.FromDate || firstDayOfMonth.toISOString().split("T")[0];
   const toDate = req.query.ToDate || today.toISOString().split("T")[0];
-  const { EmpCode, DepartmentMstId } = req.query;
+  const { EmpCode, DepartmentMstId, DesignationMstId } = req.query;
 
   // 2. Build dynamic parameters and filters for the Main Summary
   let summaryWhereClause = `WHERE S.Status = 'Invalid Logs' AND S.attendanceDate BETWEEN :FromDate AND :ToDate`;
@@ -551,6 +566,11 @@ exports.getInvalidLogsWithPunches = async (req, res, next) => {
   if (DepartmentMstId) {
     summaryWhereClause += ` AND E.DepartmentMstId = :DepartmentMstId`;
     summaryReplacements.DepartmentMstId = DepartmentMstId;
+  }
+
+  if (DesignationMstId) {
+    summaryWhereClause += ` AND E.DesignationMstId = :DesignationMstId`;
+    summaryReplacements.DesignationMstId = DesignationMstId;
   }
 
   // Query 1: Fetch the Invalid Attendance Summary rows along with Employee Metadata
