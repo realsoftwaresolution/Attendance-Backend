@@ -38,6 +38,7 @@ const REPORT_TYPES = Object.freeze({
   IN_OUT: "In Out",
   SALARY: "Salary",
   INVALID_LOGS: "Invalid Logs",
+  ADMIN_AND_COMPLIANCE: "Admin & Compliance",
 });
 
 const REPORT_FORMS = Object.freeze({
@@ -50,6 +51,14 @@ const REPORT_FORMS = Object.freeze({
   SALARY_SUMMARY: "RptSalarySummary",
 
   INVALID_LOGS_REPORT: "RptInvalidLogs",
+
+  I_CARD: "RptICard",
+  FORM_A: "RptFormA",
+  FORM_B: "RptFormB",
+  FORM_C: "RptFormC",
+  FORM_D: "RptFormD",
+  // FORM_18: "RptForm18",
+  // FORM_19: "RptForm19",
 });
 
 const SUB_REPORTS = [
@@ -89,6 +98,41 @@ const SUB_REPORTS = [
     form: REPORT_FORMS.INVALID_LOGS_REPORT,
     type: REPORT_TYPES.INVALID_LOGS,
   },
+  {
+    name: "Employee Identity Card",
+    form: REPORT_FORMS.I_CARD,
+    type: REPORT_TYPES.ADMIN_AND_COMPLIANCE,
+  },
+  {
+    name: "Form A Register",
+    form: REPORT_FORMS.FORM_A,
+    type: REPORT_TYPES.ADMIN_AND_COMPLIANCE,
+  },
+  {
+    name: "Form B Register",
+    form: REPORT_FORMS.FORM_B,
+    type: REPORT_TYPES.ADMIN_AND_COMPLIANCE,
+  },
+  {
+    name: "Form C Register",
+    form: REPORT_FORMS.FORM_C,
+    type: REPORT_TYPES.ADMIN_AND_COMPLIANCE,
+  },
+  {
+    name: "Form D Register",
+    form: REPORT_FORMS.FORM_D,
+    type: REPORT_TYPES.ADMIN_AND_COMPLIANCE,
+  },
+  // {
+  //   name: "Form 18 Factory Act Document",
+  //   form: REPORT_FORMS.FORM_18,
+  //   type: REPORT_TYPES.ADMIN_AND_COMPLIANCE,
+  // },
+  // {
+  //   name: "Form 19 Factory Act Document",
+  //   form: REPORT_FORMS.FORM_19,
+  //   type: REPORT_TYPES.ADMIN_AND_COMPLIANCE,
+  // },
 ];
 
 module.exports = {
