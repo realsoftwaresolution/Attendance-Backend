@@ -120,7 +120,7 @@ const employeeRegistrationSchema = Joi.object({
 
     EmpGrp: Joi.string()
         .max(30)
-        .required()
+        .optional()
         .messages({
             'any.required': 'Employee Group is required'
         }),
