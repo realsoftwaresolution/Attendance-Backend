@@ -119,11 +119,9 @@ const employeeRegistrationSchema = Joi.object({
         }),
 
     EmpGrp: Joi.string()
-        .max(30)
-        .optional()
-        .messages({
-            'any.required': 'Employee Group is required'
-        }),
+    .max(30)
+    .allow('', null)
+    .optional(),
 
     /* ----------------------------- Bank Details ------------------------------ */
 
