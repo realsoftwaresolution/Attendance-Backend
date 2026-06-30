@@ -6,6 +6,7 @@ const {
   deleteFileArray,
 } = require("../../utils/fileCleanup");
 const { saveValidatedBuffersToDisk } = require("../../utils/uploadEngine");
+const { getEmbeddingFromImagePath } = require("../../utils/face.utils");
 const moment = require("moment");
 
 exports.createEmployee = async (req, res, next) => {
@@ -33,6 +34,17 @@ exports.createEmployee = async (req, res, next) => {
   // Process files
   const filePaths = await saveValidatedBuffersToDisk(req);
 
+  // Generate embedding if biometric image is provided
+  let biometricVector = null;
+  const biometricImagePath = filePaths.biometricData?.[0] || null;
+  
+  if (biometricImagePath) {
+      const embedding = await getEmbeddingFromImagePath(biometricImagePath);
+      if (embedding) {
+          biometricVector = JSON.stringify(Array.from(embedding));
+      }
+  }
+
   // Create Employee
   const employee = await db.EmployeeMst.create(
     {
@@ -41,6 +53,8 @@ exports.createEmployee = async (req, res, next) => {
       DocumentPaths: filePaths.documents?.length
         ? JSON.stringify(filePaths.documents)
         : null,
+      BiometricImagePath: biometricImagePath,
+      BiometricVector: biometricVector,
       Sflag: "I",
       LogID: req.logId,
       PcID: req.pcId,
@@ -85,11 +99,7 @@ exports.createEmployee = async (req, res, next) => {
   const data = employee.toJSON();
   data.CurrentSalary = activeSalary;
 
-  [
-    "BiometricVectorFront",
-    "BiometricVectorLeft",
-    "BiometricVectorRight",
-  ].forEach((k) => delete data[k]);
+
 
   return res.status(201).json({
     success: true,
@@ -136,6 +146,25 @@ exports.updateEmployee = async (req, res, next) => {
 
     if (employee.ProfileImage && employee.ProfileImage !== finalProfilePath) {
       deleteSingleFile(employee.ProfileImage);
+    }
+  }
+
+  let finalBiometricPath = employee.BiometricImagePath;
+  let finalBiometricVector = employee.BiometricVector;
+
+  if (filePaths.biometricData?.length > 0) {
+    finalBiometricPath = filePaths.biometricData[0];
+
+    // Generate new embedding for the new image
+    const newEmbedding = await getEmbeddingFromImagePath(finalBiometricPath);
+    if (newEmbedding) {
+        finalBiometricVector = JSON.stringify(Array.from(newEmbedding));
+    } else {
+        finalBiometricVector = null; // Clear if no face found
+    }
+
+    if (employee.BiometricImagePath && employee.BiometricImagePath !== finalBiometricPath) {
+      deleteSingleFile(employee.BiometricImagePath);
     }
   }
 
@@ -240,6 +269,8 @@ exports.updateEmployee = async (req, res, next) => {
       ...updatePayload,
       ProfileImage: finalProfilePath,
       DocumentPaths: finalizedDocumentsList,
+      BiometricImagePath: finalBiometricPath,
+      BiometricVector: finalBiometricVector,
       Sflag: "U",
       LogID: logId,
       PcID: pcId,
@@ -261,11 +292,7 @@ exports.updateEmployee = async (req, res, next) => {
   const data = employee.toJSON();
   data.CurrentSalary = currentActiveSalary;
 
-  [
-    "BiometricVectorFront",
-    "BiometricVectorLeft",
-    "BiometricVectorRight",
-  ].forEach((k) => delete data[k]);
+
 
   return res.status(200).json({
     success: true,
@@ -434,6 +461,7 @@ exports.deleteEmployee = async (req, res, next) => {
 
   // 2. Clean up files on disk post-database success
   if (employee.ProfileImage) deleteSingleFile(employee.ProfileImage);
+  if (employee.BiometricImagePath) deleteSingleFile(employee.BiometricImagePath);
   if (employee.DocumentPaths) deleteFileArray(employee.DocumentPaths);
 
   return res.status(200).json({

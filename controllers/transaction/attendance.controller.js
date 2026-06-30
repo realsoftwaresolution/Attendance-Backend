@@ -3,6 +3,8 @@ const db = require("../../config/dbConnection");
 const { syncAttendanceData } = require("../../services/punchSync.service");
 const { generateAndSaveDailyAttendanceSummary } = require("../../services/dailyAttendanceSummary.service");
 const { calculateDepartmentSalary } = require("../../services/salaryCalculation.service");
+const { getFaceDistance, isFaceMatch, getEmbeddingFromImagePath, getEmbeddingFromBuffer } = require("../../utils/face.utils");
+const fs = require('fs');
 
 exports.getPunchLogs = async (req, res, next) => {
     const {
@@ -237,6 +239,7 @@ exports.updatePunchDay = async (req, res) => {
 
     /* ---------------- DELETE REMOVED ---------------- */
 
+
     const deleteIds = existingIds.filter(x => !incomingIds.includes(x));
 
     if (deleteIds.length > 0) {
@@ -264,4 +267,142 @@ exports.syncPunchNow = async (req, res, next) => {
         data: result
     });
 
+};
+
+exports.addFacePunch = async (req, res) => {
+    const { datetime } = req.body;
+    const transaction = req.transaction;
+
+    /* ---------------- VALIDATION ---------------- */
+    if (!datetime) {
+        throw new Error("datetime is required.");
+    }
+
+    let punchImageBuffer = null;
+    let punchImagePath = null;
+
+    if (req.files && req.files.punchImage && req.files.punchImage.length > 0) {
+        punchImageBuffer = req.files.punchImage[0].buffer;
+        punchImagePath = req.files.punchImage[0].path; // Depending on multer config, it might be on disk
+    } else if (req.file) {
+        punchImageBuffer = req.file.buffer;
+        punchImagePath = req.file.path;
+    }
+
+    if (!punchImageBuffer && !punchImagePath) {
+        throw new Error("punchImage is required. Please upload an image file.");
+    }
+
+    /* ---------------- 1. EXTRACT INCOMING EMBEDDING ---------------- */
+    // If multer is configured to store in memory (req.file.buffer exists), use getEmbeddingFromBuffer.
+    // If it stores to disk, use getEmbeddingFromImagePath.
+    let incomingEmbedding = null;
+    if (punchImageBuffer) {
+        incomingEmbedding = await getEmbeddingFromBuffer(punchImageBuffer);
+    } else {
+        incomingEmbedding = await getEmbeddingFromImagePath(punchImagePath);
+    }
+
+    if (!incomingEmbedding) {
+        // Clean up temp file if saved to disk
+        if (punchImagePath && fs.existsSync(punchImagePath)) fs.unlinkSync(punchImagePath);
+        throw new Error("Could not detect a face in the uploaded image.");
+    }
+
+    /* ---------------- 2. FETCH EMPLOYEES ---------------- */
+    const employees = await db.EmployeeMst.findAll({
+        where: { Active: true, BiometricVector: { [Op.ne]: null } },
+        attributes: ['EmpMstId', 'EmpCode', 'EmpFullName', 'BiometricVector']
+    });
+
+    if (!employees || employees.length === 0) {
+        if (punchImagePath && fs.existsSync(punchImagePath)) fs.unlinkSync(punchImagePath);
+        throw new Error("No eligible employees with registered biometric images found.");
+    }
+
+    /* ---------------- 3. FACE MATCHING ---------------- */
+    let matchedEmployee = null;
+    let bestDistance = Infinity;
+
+    for (const emp of employees) {
+        if (!emp.BiometricVector) continue;
+        
+        let storedEmbedding;
+        try {
+            storedEmbedding = JSON.parse(emp.BiometricVector);
+            if (!Array.isArray(storedEmbedding) && !(storedEmbedding instanceof Float32Array)) {
+                storedEmbedding = Object.values(storedEmbedding);
+            }
+        } catch (e) {
+            continue; // Corrupt stored JSON
+        }
+
+        const distance = getFaceDistance(incomingEmbedding, storedEmbedding);
+        if (distance < bestDistance) {
+            bestDistance = distance;
+            matchedEmployee = emp;
+        }
+    }
+
+    // Clean up temporary punch image
+    if (punchImagePath && fs.existsSync(punchImagePath)) {
+        fs.unlinkSync(punchImagePath);
+    }
+
+    // Threshold of 0.55 is generally a good balance for face-api.js
+    if (!matchedEmployee || !isFaceMatch(bestDistance, 0.55)) { 
+        return res.status(401).json({
+            success: false,
+            message: "Face not recognized or no match found"
+        });
+    }
+
+    /* ---------------- 3. DETERMINE IN / OUT ---------------- */
+    const targetEmpCode = matchedEmployee.EmpCode;
+    // Use the native Date object directly
+    const punchDate = new Date(datetime);
+    if (isNaN(punchDate.getTime())) {
+        throw new Error("Invalid datetime format provided.");
+    }
+
+    // Calculate start and end of day strictly using Date manipulation
+    const startDate = new Date(punchDate);
+    startDate.setUTCHours(0, 0, 0, 0);
+
+    const endDate = new Date(punchDate);
+    endDate.setUTCHours(23, 59, 59, 999);
+
+    const existingPunches = await db.PunchLogs.findAll({
+        where: {
+            EmpCode: targetEmpCode,
+            punchTime: { [Op.between]: [startDate, endDate] }
+        },
+        order: [['punchTime', 'ASC']],
+        transaction
+    });
+
+    // If count is even (0, 2, 4...) -> IN, if odd (1, 3, 5...) -> OUT
+    const nextPunchType = (existingPunches.length % 2 === 0) ? "IN" : "OUT";
+    
+    const newPunchTime = punchDate; 
+
+    /* ---------------- 4. INSERT PUNCH LOG ---------------- */
+    const newPunch = await db.PunchLogs.create({
+        EmpCode: targetEmpCode,
+        SyncTrackerId: 1, // Default 1 as per requirement
+        punchTime: newPunchTime,
+        punchType: nextPunchType,
+        punchSource: "FACE_BIOMETRIC" // Stored as BIOMETRIC for face punches
+    }, { transaction });
+
+    return res.status(200).json({
+        success: true,
+        message: `Attendance marked successfully. Punch ${nextPunchType} for ${matchedEmployee.EmpFullName}.`,
+        data: {
+            punchType: nextPunchType,
+            punchTime: newPunchTime,
+            employee: matchedEmployee.EmpFullName,
+            empCode: matchedEmployee.EmpCode
+        }
+    });
 };

@@ -38,8 +38,37 @@ function isFaceMatch(distance, threshold = 0.6) {
   return distance < threshold;
 }
 
+async function getEmbeddingFromImagePath(dbPath) {
+  await loadFaceModels();
+  try {
+    const fullPath = path.join(__dirname, "..", dbPath);
+    const img = await canvas.loadImage(fullPath);
+    const detection = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
+    if (!detection) return null; // No face detected
+    return detection.descriptor;
+  } catch (error) {
+    console.error(`Error processing image ${dbPath}:`, error.message);
+    return null;
+  }
+}
+
+async function getEmbeddingFromBuffer(buffer) {
+  await loadFaceModels();
+  try {
+    const img = await canvas.loadImage(buffer);
+    const detection = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
+    if (!detection) return null; // No face detected
+    return detection.descriptor;
+  } catch (error) {
+    console.error(`Error processing image buffer:`, error.message);
+    return null;
+  }
+}
+
 module.exports = {
   loadFaceModels,
   getFaceDistance,
   isFaceMatch,
+  getEmbeddingFromImagePath,
+  getEmbeddingFromBuffer
 };

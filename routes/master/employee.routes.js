@@ -29,7 +29,7 @@ const employeeUploadSchema = [
     {
         name: "biometricData",
         pathBuilder: (req) => `employee/biometric`,
-        maxCount: 3,
+        maxCount: 1,
         maxSizeMb: 5,
         allowedTypes: ["image/png", "image/jpg", "image/jpeg"]
     }

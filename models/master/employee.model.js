@@ -105,10 +105,9 @@ function employeeMstModel(sequelize) {
         ProfileImage: { type: DataTypes.STRING, allowNull: true },
         DocumentPaths: { type: DataTypes.TEXT, allowNull: true },
 
-        // 3-Angle Facial Biometric Registrations
-        BiometricVectorFront: { type: DataTypes.TEXT, allowNull: true },
-        BiometricVectorLeft: { type: DataTypes.TEXT, allowNull: true },
-        BiometricVectorRight: { type: DataTypes.TEXT, allowNull: true },
+        // Facial Biometric Registration
+        BiometricVector: { type: DataTypes.TEXT, allowNull: true },
+        BiometricImagePath: { type: DataTypes.STRING, allowNull: true },
 
         // Audit Engine Metadata Flags
         Sflag: { type: DataTypes.CHAR(1), allowNull: true },
