@@ -406,3 +406,29 @@ exports.addFacePunch = async (req, res) => {
         }
     });
 };
+
+exports.manualCalculate = async (req, res, next) => {
+    const { month, departmentId } = req.query;
+
+    if (!month || !departmentId) {
+        return res.status(400).json({
+            success: false,
+            message: "month and departmentId query parameters are required"
+        });
+    }
+
+    try {
+        const result = await generateAndSaveDailyAttendanceSummary({ month, departmentId });
+        
+        return res.status(200).json({
+            success: true,
+            message: "Attendance manually calculated and saved successfully.",
+            data: result
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Failed to calculate attendance manually",
+        });
+    }
+};

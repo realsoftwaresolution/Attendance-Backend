@@ -31,9 +31,13 @@ exports.login = async (req, res) => {
     }
 
     const latestCompany = await db.CompanyMst.findOne({
+        where: {
+            Active: 1,
+            IsDelete: 0
+        },
         order: [["CompanyMstId", "DESC"]]
     });
-
+    
     const [permissions, reports] = await Promise.all([
         getUserPermissions(user.UserMstId),
         getUserReports(user.UserMstId)
