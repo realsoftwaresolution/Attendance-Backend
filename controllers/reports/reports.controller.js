@@ -19,30 +19,31 @@ const getReportDates = (FromDate, ToDate) => {
 };
 
 const buildReportQuery = (req, fromDate, toDate) => {
-  // Added DesignationMstId to the destructured query parameters
-  const { EmpCode, DepartmentMstId, CompanyMstId, DesignationMstId } =
+  const { EmpCode, EmpMstId, DepartmentMstId, CompanyMstId, DesignationMstId } =
     req.query;
 
   let whereClause = `WHERE 1=1`;
   const replacements = { FromDate: fromDate, ToDate: toDate };
 
-  if (EmpCode) {
-    whereClause += ` AND P.EmpCode = :EmpCode`;
-    replacements.EmpCode = EmpCode;
-  }
-  if (DepartmentMstId) {
-    whereClause += ` AND E.DepartmentMstId = :DepartmentMstId`;
-    replacements.DepartmentMstId = DepartmentMstId;
-  }
-  if (CompanyMstId) {
-    whereClause += ` AND E.CompanyMstId = :CompanyMstId`;
-    replacements.CompanyMstId = CompanyMstId;
-  }
-  // Added the DesignationMstId validation filter check
-  if (DesignationMstId) {
-    whereClause += ` AND E.DesignationMstId = :DesignationMstId`;
-    replacements.DesignationMstId = DesignationMstId;
-  }
+  const applyInFilter = (paramValue, columnName, paramKey) => {
+    if (paramValue) {
+      const values = String(paramValue)
+        .split(",")
+        .map((v) => v.trim())
+        .filter((v) => v !== "");
+        
+      if (values.length > 0) {
+        whereClause += ` AND ${columnName} IN (:${paramKey})`;
+        replacements[paramKey] = values;
+      }
+    }
+  };
+
+  applyInFilter(EmpCode, "P.EmpCode", "EmpCode");
+  applyInFilter(EmpMstId, "E.EmpMstId", "EmpMstId");
+  applyInFilter(DepartmentMstId, "E.DepartmentMstId", "DepartmentMstId");
+  applyInFilter(CompanyMstId, "E.CompanyMstId", "CompanyMstId");
+  applyInFilter(DesignationMstId, "E.DesignationMstId", "DesignationMstId");
 
   whereClause += ` AND CAST(P.punchTime AS DATE) BETWEEN :FromDate AND :ToDate`;
 

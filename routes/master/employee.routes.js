@@ -38,6 +38,7 @@ const employeeUploadSchema = [
 
 router.use(verifyToken);
 /* ------------------ GET ENDPOINTS ------------------ */
+router.get("/export", checkPermission(FORMS.EMPLOYEE, 'view'), asyncHandler(ctrl.exportEmployeeMasterData));
 router.get("/", checkPermission(FORMS.EMPLOYEE, 'view'), asyncHandler(ctrl.getAllEmployees));
 
 /* ------------------ POST ENDPOINT ------------------ */

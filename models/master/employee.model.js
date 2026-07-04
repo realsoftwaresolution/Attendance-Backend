@@ -30,6 +30,7 @@ function employeeMstModel(sequelize) {
 
         EmpPhoneNo: { type: DataTypes.STRING(20) },
         EmpPANNo: { type: DataTypes.STRING(30) },
+        AadharCardNo: { type: DataTypes.STRING(20) },
         EmpESINo: { type: DataTypes.STRING(50) },
 
         EmpAddress: { type: DataTypes.STRING },

@@ -1,3 +1,6 @@
+const ExcelJS = require("exceljs");
+const fs = require("fs");
+const path = require("path");
 const { Op, QueryTypes, Sequelize } = require("sequelize");
 const db = require("../../config/dbConnection");
 const { AppError } = require("../../utils/AppError");
@@ -235,8 +238,16 @@ exports.updateEmployee = async (req, res, next) => {
         );
       }
 
+      let shouldNewRecordBeActive = true;
+
       if (currentActive) {
-        await currentActive.update({ Active: false }, { transaction });
+        if (effectiveMonthValue >= currentActive.EffectiveMonth) {
+          // New record is newer (or same), make it active and deactivate old
+          await currentActive.update({ Active: false }, { transaction });
+        } else {
+          // New record is older, keep current active as is
+          shouldNewRecordBeActive = false;
+        }
       }
 
       await db.EmployeeSalaryHistory.create(
@@ -251,7 +262,7 @@ exports.updateEmployee = async (req, res, next) => {
           EmpBankName: req.body.EmpBankName,
           EmpBankACNo: req.body.EmpBankACNo,
           EmpBankIFSCode: req.body.EmpBankIFSCode,
-          Active: true,
+          Active: shouldNewRecordBeActive,
         },
         { transaction },
       );
@@ -656,13 +667,25 @@ exports.getEmployeeBasicInfo = async (req, res, next) => {
         SELECT TOP 1
             e.EmpMstId,
             e.EmpFullName,
+            e.AadharCardNo,
             dg.DesignationMstId,
             dg.Designation,
             c.CompanyMstId,
             c.CompanyName,
             d.DepartmentMstId,
-            d.Department
+            d.Department,
+            sh.CashSalary,
+            sh.BankSalary,
+            sh.TotalSalary,
+            sh.SalaryType,
+            sh.EffectiveMonth
         FROM EmployeeMst e
+        LEFT JOIN (
+            SELECT *, 
+                   ROW_NUMBER() OVER (PARTITION BY EmpMstId ORDER BY createdAt DESC) as rn
+            FROM EmployeeSalaryHistory 
+            WHERE Active = 1
+        ) sh ON e.EmpMstId = sh.EmpMstId AND sh.rn = 1
         LEFT JOIN DesignationMst dg ON e.DesignationMstId = dg.DesignationMstId
         LEFT JOIN CompanyMst c ON e.CompanyMstId = c.CompanyMstId
         LEFT JOIN DepartmentMst d ON e.DepartmentMstId = d.DepartmentMstId
@@ -683,4 +706,216 @@ exports.getEmployeeBasicInfo = async (req, res, next) => {
     message: "Employee basic information retrieved successfully.",
     data: result[0],
   });
+};
+
+exports.exportEmployeeMasterData = async (req, res, next) => {
+  try {
+    const { EmpCode, EmpMstId, DepartmentMstId, CompanyMstId, DesignationMstId } = req.query;
+
+    let whereClause = `WHERE 1=1`;
+    const replacements = {};
+
+    const applyInFilter = (paramValue, columnName, paramKey) => {
+      if (paramValue) {
+        const values = String(paramValue)
+          .split(",")
+          .map((v) => v.trim())
+          .filter((v) => v !== "");
+          
+        if (values.length > 0) {
+          whereClause += ` AND ${columnName} IN (:${paramKey})`;
+          replacements[paramKey] = values;
+        }
+      }
+    };
+
+    applyInFilter(EmpCode, "e.EmpCode", "EmpCode");
+    applyInFilter(EmpMstId, "e.EmpMstId", "EmpMstId");
+    applyInFilter(DepartmentMstId, "e.DepartmentMstId", "DepartmentMstId");
+    applyInFilter(CompanyMstId, "e.CompanyMstId", "CompanyMstId");
+    applyInFilter(DesignationMstId, "e.DesignationMstId", "DesignationMstId");
+
+    const query = `
+      SELECT 
+          e.*,
+          ISNULL(c.CompanyName, 'Unassigned Company') AS CompanyName, 
+          ISNULL(d.Department, 'Unassigned Department') AS Department, 
+          ISNULL(dg.Designation, 'Unassigned Designation') AS Designation,
+          sh.CashSalary,
+          sh.BankSalary,
+          sh.TotalSalary,
+          sh.SalaryType
+      FROM EmployeeMst e
+      LEFT JOIN CompanyMst c ON e.CompanyMstId = c.CompanyMstId
+      LEFT JOIN DepartmentMst d ON e.DepartmentMstId = d.DepartmentMstId
+      LEFT JOIN DesignationMst dg ON e.DesignationMstId = dg.DesignationMstId
+      LEFT JOIN (
+          SELECT *, ROW_NUMBER() OVER (PARTITION BY EmpMstId ORDER BY createdAt DESC) as rn
+          FROM EmployeeSalaryHistory
+          WHERE Active = 1
+      ) sh ON e.EmpMstId = sh.EmpMstId AND sh.rn = 1
+      ${whereClause}
+      ORDER BY CompanyName ASC, Department ASC, Designation ASC, e.EmpFullName ASC
+    `;
+
+    const employees = await db.sequelize.query(query, {
+      replacements,
+      type: QueryTypes.SELECT,
+    });
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Employee Master');
+
+    worksheet.columns = [
+      { header: 'Company', key: 'CompanyName', width: 30 },
+      { header: 'Department', key: 'Department', width: 30 },
+      { header: 'Designation', key: 'Designation', width: 30 },
+      { header: 'Emp Code', key: 'EmpCode', width: 15 },
+      { header: 'Full Name', key: 'EmpFullName', width: 35 },
+      { header: 'Emp Type', key: 'EmpType', width: 15 },
+      { header: 'Phone', key: 'EmpPhoneNo', width: 15 },
+      { header: 'PAN No', key: 'EmpPANNo', width: 15 },
+      { header: 'Aadhar', key: 'AadharCardNo', width: 15 },
+      { header: 'ESI No', key: 'EmpESINo', width: 15 },
+      { header: 'Address', key: 'EmpAddress', width: 50 },
+      { header: 'Date of Joining', key: 'DateOfJoining', width: 25 },
+      { header: 'Date of Birth', key: 'DateOfBirth', width: 20 },
+      { header: 'Emp Group', key: 'EmpGrp', width: 15 },
+      { header: 'PF App.', key: 'IsPFApplicable', width: 20 },
+      { header: 'EPS App.', key: 'IsEPSApplicable', width: 20 },
+      { header: 'PF Eff. Month', key: 'PFEffectiveMonth', width: 20 },
+      { header: 'UAN No', key: 'UANNo', width: 15 },
+      { header: 'PF No', key: 'PFNo', width: 15 },
+      { header: 'ESIC App.', key: 'IsESICApplicable', width: 20 },
+      { header: 'ESIC Eff. Month', key: 'ESICEffectiveMonth', width: 25 },
+      { header: 'ESINo', key: 'ESINo', width: 15 },
+      { header: 'PT App.', key: 'IsPTApplicable', width: 20 },
+      { header: 'PT Eff. Month', key: 'PTEffectiveMonth', width: 20 },
+      { header: 'PT Remarks', key: 'PTRemarks', width: 25 },
+      { header: 'Bank Full Name', key: 'EmpBankFullName', width: 35 },
+      { header: 'Bank Name', key: 'EmpBankName', width: 30 },
+      { header: 'Bank A/C No', key: 'EmpBankACNo', width: 25 },
+      { header: 'IFSC Code', key: 'EmpBankIFSCode', width: 15 },
+      { header: 'Salary Type', key: 'SalaryType', width: 15 },
+      { header: 'Cash Salary', key: 'CashSalary', width: 15 },
+      { header: 'Bank Salary', key: 'BankSalary', width: 15 },
+      { header: 'Total Salary', key: 'TotalSalary', width: 15 },
+      { header: 'Active Status', key: 'Active', width: 15 },
+    ];
+
+    worksheet.getRow(1).eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 14 };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF3B3B3B' } }; // Dark grey from image
+      cell.alignment = { vertical: 'middle', horizontal: 'left' };
+      cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+    });
+    
+    let currentCompany = null;
+    let currentDept = null;
+    let currentDesig = null;
+    let startCompanyRow = 2;
+    let startDeptRow = 2;
+    let startDesigRow = 2;
+
+    const mergeCells = (colLetter, start, end) => {
+      if (start < end) {
+        worksheet.mergeCells(`${colLetter}${start}:${colLetter}${end}`);
+        const cell = worksheet.getCell(`${colLetter}${start}`);
+        cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+      }
+    };
+
+    employees.forEach((emp, index) => {
+      const rowIndex = index + 2;
+
+      worksheet.addRow({
+        CompanyName: emp.CompanyName,
+        Department: emp.Department,
+        Designation: emp.Designation,
+        EmpCode: emp.EmpCode,
+        EmpFullName: emp.EmpFullName,
+        EmpType: emp.EmpType,
+        EmpPhoneNo: emp.EmpPhoneNo || '-',
+        EmpPANNo: emp.EmpPANNo || '-',
+        AadharCardNo: emp.AadharCardNo || '-',
+        EmpESINo: emp.EmpESINo || '-',
+        EmpAddress: emp.EmpAddress || '-',
+        DateOfJoining: emp.DateOfJoining || '-',
+        DateOfBirth: emp.DateOfBirth || '-',
+        EmpGrp: emp.EmpGrp || '-',
+        IsPFApplicable: emp.IsPFApplicable ? 'Yes' : 'No',
+        IsEPSApplicable: emp.IsEPSApplicable ? 'Yes' : 'No',
+        PFEffectiveMonth: emp.PFEffectiveMonth || '-',
+        UANNo: emp.UANNo || '-',
+        PFNo: emp.PFNo || '-',
+        IsESICApplicable: emp.IsESICApplicable ? 'Yes' : 'No',
+        ESICEffectiveMonth: emp.ESICEffectiveMonth || '-',
+        ESINo: emp.ESINo || '-',
+        IsPTApplicable: emp.IsPTApplicable ? 'Yes' : 'No',
+        PTEffectiveMonth: emp.PTEffectiveMonth || '-',
+        PTRemarks: emp.PTRemarks || '-',
+        EmpBankFullName: emp.EmpBankFullName || '-',
+        EmpBankName: emp.EmpBankName || '-',
+        EmpBankACNo: emp.EmpBankACNo || '-',
+        EmpBankIFSCode: emp.EmpBankIFSCode || '-',
+        SalaryType: emp.SalaryType || '-',
+        CashSalary: emp.CashSalary || 0,
+        BankSalary: emp.BankSalary || 0,
+        TotalSalary: emp.TotalSalary || 0,
+        Active: emp.Active ? 'Active' : 'Inactive',
+      });
+
+      const row = worksheet.getRow(rowIndex);
+      // Remove hardcoded height to allow Excel to auto-fit to content height
+      row.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+      
+      // Set font size to 12 for data rows
+      row.eachCell((cell) => {
+        cell.font = { size: 12 };
+      });
+
+      const isCompanyChanged = currentCompany !== null && currentCompany !== emp.CompanyName;
+      const isDeptChanged = currentDept !== null && (isCompanyChanged || currentDept !== emp.Department);
+      const isDesigChanged = currentDesig !== null && (isDeptChanged || currentDesig !== emp.Designation);
+
+      if (isCompanyChanged) {
+        mergeCells('A', startCompanyRow, rowIndex - 1);
+        startCompanyRow = rowIndex;
+      }
+      if (isDeptChanged) {
+        mergeCells('B', startDeptRow, rowIndex - 1);
+        startDeptRow = rowIndex;
+      }
+      if (isDesigChanged) {
+        mergeCells('C', startDesigRow, rowIndex - 1);
+        startDesigRow = rowIndex;
+      }
+
+      currentCompany = emp.CompanyName;
+      currentDept = emp.Department;
+      currentDesig = emp.Designation;
+    });
+
+    const finalRow = employees.length + 1;
+    if (employees.length > 0) {
+      mergeCells('A', startCompanyRow, finalRow);
+      mergeCells('B', startDeptRow, finalRow);
+      mergeCells('C', startDesigRow, finalRow);
+    }
+
+    worksheet.eachRow((row) => {
+      row.eachCell((cell) => {
+        cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+      });
+    });
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=EmployeeMasterExport.xlsx');
+
+    await workbook.xlsx.write(res);
+    res.end();
+
+  } catch (error) {
+    next(error);
+  }
 };

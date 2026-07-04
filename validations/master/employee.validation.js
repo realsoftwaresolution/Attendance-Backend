@@ -87,12 +87,17 @@ const employeeRegistrationSchema = Joi.object({
     EmpPANNo: Joi.string()
         .uppercase()
         .pattern(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/)
-        .required()
+        .allow('', null)
+        .optional()
         .messages({
             'string.pattern.base':
-                'Invalid PAN Card format. Example: ABCDE1234F',
-            'any.required': 'PAN Number is required'
+                'Invalid PAN Card format. Example: ABCDE1234F'
         }),
+
+    AadharCardNo: Joi.string()
+        .max(20)
+        .allow('', null)
+        .optional(),
 
     EmpAddress: Joi.string()
         .max(500)
@@ -127,33 +132,25 @@ const employeeRegistrationSchema = Joi.object({
 
     EmpBankFullName: Joi.string()
         .max(255)
-        .required()
-        .messages({
-            'any.required': 'Bank Account Holder Name is required'
-        }),
+        .allow('', null)
+        .optional(),
 
     EmpBankName: Joi.string()
         .max(255)
-        .required()
-        .messages({
-            'any.required': 'Bank Name is required'
-        }),
+        .allow('', null)
+        .optional(),
 
     EmpBankACNo: Joi.string()
         .max(50)
-        .required()
-        .messages({
-            'any.required': 'Bank Account Number is required'
-        }),
+        .allow('', null)
+        .optional(),
 
     EmpBankIFSCode: Joi.string()
         .max(30)
         .uppercase()
         .alphanum()
-        .required()
-        .messages({
-            'any.required': 'IFSC Code is required'
-        }),
+        .allow('', null)
+        .optional(),
 
     /* ----------------------------------- PF ---------------------------------- */
 
