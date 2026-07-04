@@ -732,3 +732,112 @@ exports.getInvalidLogsWithPunches = async (req, res, next) => {
     data: responseData,
   });
 };
+
+exports.getSalarySlipReport = async (req, res, next) => {
+  const { SalaryMonth, EmpCode, DepartmentMstId, CompanyMstId, DesignationMstId } = req.query;
+
+  if (!SalaryMonth) {
+    return res.status(400).json({ success: false, message: "SalaryMonth is required. (Format: YYYY-MM)" });
+  }
+
+  let whereClause = `WHERE SD.SalaryMonth = :SalaryMonth AND SD.Active = 1`;
+  const replacements = { SalaryMonth };
+
+  const applyInFilter = (paramValue, columnName, paramKey) => {
+    if (paramValue) {
+      const values = String(paramValue)
+        .split(",")
+        .map((v) => v.trim())
+        .filter((v) => v !== "");
+        
+      if (values.length > 0) {
+        whereClause += ` AND ${columnName} IN (:${paramKey})`;
+        replacements[paramKey] = values;
+      }
+    }
+  };
+
+  applyInFilter(EmpCode, "SD.EmpCode", "EmpCode");
+  applyInFilter(DepartmentMstId, "SD.DepartmentMstId", "DepartmentMstId");
+  applyInFilter(CompanyMstId, "SD.CompanyMstId", "CompanyMstId");
+  applyInFilter(DesignationMstId, "SD.DesignationMstId", "DesignationMstId");
+
+  const querySalaryDet = `
+    SELECT 
+      SD.EmpMstId, SD.EmpCode, SD.EmpFullName, SD.CompanyName, SD.Department, SD.Designation,
+      SD.BankPayableSalary, SD.CashPayableSalary, SD.TotalOutstandingAdvance,
+      SD.CashSalaryAfterAdvance, SD.NetPayableSalary, SD.SalaryCalculationMethod,
+      SD.SalaryPerMinuteRate
+    FROM SalaryDet SD
+    ${whereClause}
+  `;
+
+  const salaryRecords = await db.sequelize.query(querySalaryDet, {
+    replacements,
+    type: QueryTypes.SELECT,
+  });
+
+  if (salaryRecords.length === 0) {
+    return res.status(200).json({ success: true, count: 0, data: [], message: "No salary records found for the given criteria." });
+  }
+
+  // To optimize, fetch all DailyAttendanceSummary for these EmpMstIds in this month
+  const empMstIds = salaryRecords.map(r => r.EmpMstId);
+  const querySummary = `
+    SELECT EmpMstId, OTHours, OTGapMinutes
+    FROM DailyAttendanceSummary
+    WHERE EmpMstId IN (:empMstIds)
+      AND FORMAT(attendanceDate, 'yyyy-MM') = :SalaryMonth
+  `;
+  
+  const summaries = await db.sequelize.query(querySummary, {
+    replacements: { empMstIds, SalaryMonth },
+    type: QueryTypes.SELECT,
+  });
+
+  // Group summaries by EmpMstId for fast access
+  const summaryMap = {};
+  for (const s of summaries) {
+    if (!summaryMap[s.EmpMstId]) {
+      summaryMap[s.EmpMstId] = 0; // Total OT Minutes
+    }
+    const netOT = SalaryHelper.calculateDailyNetOTMinutes(s.OTHours, s.OTGapMinutes);
+    summaryMap[s.EmpMstId] += netOT;
+  }
+
+  // Do parallel work for each employee calculation for fast report generation
+  const result = await Promise.all(salaryRecords.map(async (emp) => {
+    const totalOTMins = summaryMap[emp.EmpMstId] || 0;
+    const otAmount = SalaryHelper.roundMoney(totalOTMins * (emp.SalaryPerMinuteRate || 0));
+
+    return {
+      EmpCode: emp.EmpCode,
+      EmpFullName: emp.EmpFullName,
+      CompanyName: emp.CompanyName || '-',
+      Department: emp.Department || '-',
+      Designation: emp.Designation || '-',
+      BankPayableSalary: emp.BankPayableSalary || 0,
+      CashPayableSalary: emp.CashPayableSalary || 0,
+      TotalOutstandingAdvance: emp.TotalOutstandingAdvance || 0,
+      CashSalaryAfterAdvance: emp.CashSalaryAfterAdvance || 0,
+      NetPayableSalary: emp.NetPayableSalary || 0,
+      SalaryCalculationMethod: emp.SalaryCalculationMethod || '-',
+      TotalOTHours: SalaryHelper.minutesToHHMM(totalOTMins),
+      OTAmount: otAmount
+    };
+  }));
+
+  // Sort order: Company -> Department -> Designation
+  result.sort((a, b) => {
+    if (a.CompanyName !== b.CompanyName) return a.CompanyName.localeCompare(b.CompanyName);
+    if (a.Department !== b.Department) return a.Department.localeCompare(b.Department);
+    return a.Designation.localeCompare(b.Designation);
+  });
+
+  return res.status(200).json({
+    success: true,
+    message: "Salary slip report generated successfully.",
+    count: result.length,
+    data: result
+  });
+};
