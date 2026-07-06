@@ -37,16 +37,8 @@ exports.createEmployee = async (req, res, next) => {
   // Process files
   const filePaths = await saveValidatedBuffersToDisk(req);
 
-  // Generate embedding if biometric image is provided
-  let biometricVector = null;
   const biometricImagePath = filePaths.biometricData?.[0] || null;
-  
-  if (biometricImagePath) {
-      const embedding = await getEmbeddingFromImagePath(biometricImagePath);
-      if (embedding) {
-          biometricVector = JSON.stringify(Array.from(embedding));
-      }
-  }
+  let biometricVector = req.body.BiometricVector || null;
 
   // Create Employee
   const employee = await db.EmployeeMst.create(
@@ -153,18 +145,10 @@ exports.updateEmployee = async (req, res, next) => {
   }
 
   let finalBiometricPath = employee.BiometricImagePath;
-  let finalBiometricVector = employee.BiometricVector;
+  let finalBiometricVector = req.body.BiometricVector !== undefined ? req.body.BiometricVector : employee.BiometricVector;
 
   if (filePaths.biometricData?.length > 0) {
     finalBiometricPath = filePaths.biometricData[0];
-
-    // Generate new embedding for the new image
-    const newEmbedding = await getEmbeddingFromImagePath(finalBiometricPath);
-    if (newEmbedding) {
-        finalBiometricVector = JSON.stringify(Array.from(newEmbedding));
-    } else {
-        finalBiometricVector = null; // Clear if no face found
-    }
 
     if (employee.BiometricImagePath && employee.BiometricImagePath !== finalBiometricPath) {
       deleteSingleFile(employee.BiometricImagePath);
@@ -657,6 +641,12 @@ exports.deleteSalaryHistory = async (req, res, next) => {
 
 exports.getEmployeeBasicInfo = async (req, res, next) => {
   const { empCode } = req.params;
+  let { month } = req.query;
+
+  if (!month) {
+    const currentDate = new Date();
+    month = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+  }
 
   if (!empCode) {
     throw new AppError("Employee Code is required.", 400);
@@ -677,23 +667,28 @@ exports.getEmployeeBasicInfo = async (req, res, next) => {
             sh.CashSalary,
             sh.BankSalary,
             sh.TotalSalary,
-            sh.SalaryType,
-            sh.EffectiveMonth
+            sd.NetPayableSalary As NetSalary
         FROM EmployeeMst e
         LEFT JOIN (
             SELECT *, 
                    ROW_NUMBER() OVER (PARTITION BY EmpMstId ORDER BY createdAt DESC) as rn
             FROM EmployeeSalaryHistory 
-            WHERE Active = 1
+            WHERE Active = 1 ${month ? `AND EffectiveMonth <= :month` : ''}
         ) sh ON e.EmpMstId = sh.EmpMstId AND sh.rn = 1
         LEFT JOIN DesignationMst dg ON e.DesignationMstId = dg.DesignationMstId
         LEFT JOIN CompanyMst c ON e.CompanyMstId = c.CompanyMstId
         LEFT JOIN DepartmentMst d ON e.DepartmentMstId = d.DepartmentMstId
+        LEFT JOIN SalaryDet sd ON e.EmpMstId = sd.EmpMstId ${month ? `AND sd.SalaryMonth = :month` : 'AND 1=0'}
         WHERE e.EmpCode = :empCode
     `;
 
+  const replacements = { empCode };
+  if (month) {
+      replacements.month = month;
+  }
+
   const result = await db.sequelize.query(query, {
-    replacements: { empCode },
+    replacements,
     type: QueryTypes.SELECT,
   });
 

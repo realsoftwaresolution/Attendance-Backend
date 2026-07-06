@@ -204,7 +204,11 @@ const employeeRegistrationSchema = Joi.object({
         .default(true),
 
     IsDelete: Joi.boolean()
-        .default(false)
+        .default(false),
+
+    BiometricVector: Joi.string()
+        .allow('', null)
+        .optional()
 
 })
     .when(

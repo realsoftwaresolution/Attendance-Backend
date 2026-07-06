@@ -22,7 +22,7 @@ const punchUploadSchema = [
 router.use(verifyToken);
 router.get("/", checkPermission(FORMS.ATTENDANCE, 'view'), asyncHandler(ctrl.getPunchLogs));
 router.put("/", checkPermission(FORMS.ATTENDANCE, 'edit'), asyncTransactionHandler(ctrl.updatePunchDay));
-router.post("/face-punch", configureMulterValidators(punchUploadSchema), asyncTransactionHandler(ctrl.addFacePunch));
+router.post("/face-punch", asyncTransactionHandler(ctrl.addFacePunch));
 router.post("/sync-punch", checkPermission(FORMS.ATTENDANCE, 'view'), asyncHandler(ctrl.syncPunchNow));
 router.get("/manual-calculate", checkPermission(FORMS.ATTENDANCE, 'edit'), asyncHandler(ctrl.manualCalculate));
 
