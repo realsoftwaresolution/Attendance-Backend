@@ -30,7 +30,7 @@ class ESICCalculator {
         const salaryMonthDate = `${month}-01`;
 
         const bankSalary =
-            Number(context.bankPayableSalary || 0);
+            Number(context.bankSalaryAfterLoan || 0);
 
         if (bankSalary <= 0) {
             context.taxMessages.push(

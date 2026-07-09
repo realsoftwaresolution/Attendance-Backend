@@ -3,6 +3,8 @@ const db = require("../../config/dbConnection");
 const { calculateDepartmentSalary } = require("../../services/salaryCalculation.service");
 const { AppError } = require("../../utils/AppError");
 const moment = require('moment-timezone');
+const TaxManager = require("../../classes/taxes/TaxManager");
+const FinalSalaryManager = require("../../classes/FinalSalaryManager");
 
 exports.manualCalculateSalary = async (req, res, next) => {
     const { departmentId, month } = req.query;
@@ -85,6 +87,156 @@ exports.saveSalary = async (req, res, next) => {
         transaction
     });
 
+    /* ---------------- Recalculate Taxes and Final Salary ---------------- */
+    const salaryMonthEndDate = moment(
+        SalaryMonth,
+        'YYYY-MM'
+    ).endOf('month').format('YYYY-MM-DD');
+
+    const loanDeductionsToInsert = [];
+
+    for (let item of SalaryDetails) {
+
+        let context = {
+            employee: item,
+            month: SalaryMonth,
+            taxMessages: [],
+            bankPayableSalary: Number(item.BankPayableSalary || 0),
+            cashPayableSalary: Number(item.CashPayableSalary || 0),
+            totalOutstandingAdvance: Number(item.TotalOutstandingAdvance || 0),
+            cashSalaryAfterAdvance: Number(item.CashPayableSalary || 0) - Number(item.TotalOutstandingAdvance || 0),
+            loanDeductionBank: Number(item.LoanDeductionBank || 0),
+            loanDeductionCash: Number(item.LoanDeductionCash || 0),
+            bankSalaryAfterLoan: Number(item.BankPayableSalary || 0) - Number(item.LoanDeductionBank || 0),
+        };
+        context.cashSalaryAfterLoan = context.cashSalaryAfterAdvance - context.loanDeductionCash;
+
+        await TaxManager.calculate(context);
+        FinalSalaryManager.calculate(context);
+
+        item.TaxMessages = context.taxMessages;
+        item.EmployeeEPF = context.employeeEPF || 0;
+        item.EmployeeEPS = context.employeeEPS || 0;
+        item.EmployerEPF = context.employerEPF || 0;
+        item.EmployerAcc02 = context.employerAcc02 || 0;
+        item.EmployerAcc21 = context.employerAcc21 || 0;
+        item.EmployerAcc22 = context.employerAcc22 || 0;
+        item.EPFWages = context.epfWages || 0;
+        item.EPSWages = context.epsWages || 0;
+        
+        item.EmployeeESIC = context.employeeESIC || 0;
+        item.EmployerESIC = context.employerESIC || 0;
+        item.ESICWages = context.esicWages || 0;
+
+        item.EmployeePT = context.employeePT || 0;
+
+        item.TotalStatutoryDeductions = context.totalStatutoryDeductions || 0;
+        item.BankSalaryAfterTax = context.bankSalaryAfterTax || 0;
+        
+        item.CashSalaryAfterAdvance = context.cashSalaryAfterAdvance || 0;
+        item.CashSalaryAfterLoan = context.cashSalaryAfterLoan || 0;
+        item.BankSalaryAfterLoan = context.bankSalaryAfterLoan || 0;
+        item.NetPayableSalary = context.netPayableSalary || 0;
+
+        /* ---------------- LIFO Loan Distribution ---------------- */
+        let remainingBank = context.loanDeductionBank;
+        let remainingCash = context.loanDeductionCash;
+        let totalRemaining = remainingBank + remainingCash;
+
+        if (totalRemaining > 0) {
+            const loans = await db.sequelize.query(`
+                SELECT 
+                    lm.LoanMstId, 
+                    lm.LoanAmount,
+                    lm.DeductFromBank,
+                    lm.DeductFromCash,
+                    COALESCE(SUM(ld.DeductedAmount), 0) as TotalDeducted
+                FROM LoanMst lm
+                LEFT JOIN LoanDeduction ld ON lm.LoanMstId = ld.LoanMstId AND ld.Active = 1
+                WHERE lm.EmpMstId = :EmpMstId 
+                  AND lm.Active = 1 
+                  AND lm.IsClosed = 0
+                  AND lm.StartingDate <= :salaryMonthEndDate
+                GROUP BY lm.LoanMstId, lm.LoanAmount, lm.DeductFromBank, lm.DeductFromCash, lm.LoanDate
+                ORDER BY lm.LoanDate DESC, lm.LoanMstId DESC
+            `, {
+                replacements: { EmpMstId: item.EmpMstId, salaryMonthEndDate },
+                type: db.Sequelize.QueryTypes.SELECT,
+                transaction
+            });
+
+            // Pass 1: Cap by Monthly Installment amounts (DeductFromBank / DeductFromCash)
+            for (let loan of loans) {
+                if (remainingBank <= 0 && remainingCash <= 0) break;
+
+                let outstanding = Number(loan.LoanAmount) - Number(loan.TotalDeducted);
+                if (outstanding <= 0) continue;
+
+                let installBank = Number(loan.DeductFromBank);
+                let installCash = Number(loan.DeductFromCash);
+
+                let deductBank = Math.min(remainingBank, installBank, outstanding);
+                let deductCash = Math.min(remainingCash, installCash, outstanding - deductBank);
+
+                let deductedAmount = deductBank + deductCash;
+                if (deductedAmount > 0) {
+                    remainingBank -= deductBank;
+                    remainingCash -= deductCash;
+                    loan.TotalDeducted = Number(loan.TotalDeducted) + deductedAmount; // Update locally for pass 2
+
+                    loanDeductionsToInsert.push({
+                        LoanMstId: loan.LoanMstId,
+                        EmpMstId: item.EmpMstId,
+                        DeductionMonth: SalaryMonth,
+                        DeductedAmount: deductedAmount,
+                        DeductedFromBank: deductBank,
+                        DeductedFromCash: deductCash,
+                        Remark: 'Salary Deduction',
+                        Active: true
+                    });
+                }
+            }
+
+            // Pass 2: If there's still money left over (e.g. user manually increased the deduction),
+            // we dump the rest into the newest loans capped only by Outstanding balance.
+            for (let loan of loans) {
+                if (remainingBank <= 0 && remainingCash <= 0) break;
+
+                let outstanding = Number(loan.LoanAmount) - Number(loan.TotalDeducted);
+                if (outstanding <= 0) continue;
+
+                let deductBank = Math.min(remainingBank, outstanding);
+                let deductCash = Math.min(remainingCash, outstanding - deductBank);
+
+                let deductedAmount = deductBank + deductCash;
+                if (deductedAmount > 0) {
+                    remainingBank -= deductBank;
+                    remainingCash -= deductCash;
+
+                    // If an entry already exists for this loan in Pass 1, we add to it, 
+                    // otherwise create a new one.
+                    let existingEntry = loanDeductionsToInsert.find(l => l.LoanMstId === loan.LoanMstId);
+                    if (existingEntry) {
+                        existingEntry.DeductedFromBank += deductBank;
+                        existingEntry.DeductedFromCash += deductCash;
+                        existingEntry.DeductedAmount += deductedAmount;
+                    } else {
+                        loanDeductionsToInsert.push({
+                            LoanMstId: loan.LoanMstId,
+                            EmpMstId: item.EmpMstId,
+                            DeductionMonth: SalaryMonth,
+                            DeductedAmount: deductedAmount,
+                            DeductedFromBank: deductBank,
+                            DeductedFromCash: deductCash,
+                            Remark: 'Salary Deduction (Overflow)',
+                            Active: true
+                        });
+                    }
+                }
+            }
+        }
+    }
+
     /* ---------------- Prepare Salary Details ---------------- */
 
     const salaryRows = SalaryDetails.map(item => ({
@@ -104,11 +256,40 @@ exports.saveSalary = async (req, res, next) => {
         }
     );
 
-    // 1. Prepare Date Bounds
-    const salaryMonthEndDate = moment(
-        SalaryMonth,
-        'YYYY-MM'
-    ).endOf('month').format('YYYY-MM-DD');
+    /* ---------------- Bulk Insert Loan Deductions ---------------- */
+    if (loanDeductionsToInsert.length > 0) {
+        await db.LoanDeduction.bulkCreate(
+            loanDeductionsToInsert,
+            { transaction, validate: true }
+        );
+
+        // Auto-close loans that have been fully paid off
+        const loanIdsToCheck = [...new Set(loanDeductionsToInsert.map(ld => ld.LoanMstId))];
+        if (loanIdsToCheck.length > 0) {
+            await db.sequelize.query(`
+                UPDATE LoanMst 
+                SET IsClosed = 1, 
+                    CloseRemark = 'Auto-closed after full deduction',
+                    Sflag = 'U',
+                    LogID = :LogID,
+                    PcID = :PcID
+                WHERE LoanMstId IN (:loanIdsToCheck)
+                  AND IsClosed = 0
+                  AND LoanAmount <= (
+                      SELECT COALESCE(SUM(DeductedAmount), 0) 
+                      FROM LoanDeduction 
+                      WHERE LoanMstId = LoanMst.LoanMstId AND Active = 1
+                  )
+            `, {
+                replacements: { 
+                    loanIdsToCheck,
+                    LogID: req.user?.UserMstId || null,
+                    PcID: req.ip
+                },
+                transaction
+            });
+        }
+    }
 
     // 2. Perform Batch Update
     const [updatedCount] = await db.AdvanceMst.update(
@@ -181,6 +362,50 @@ exports.deleteSalary = async (req, res, next) => {
             transaction
         }
     );
+
+    /* ---------------- Delete Loan Deductions ---------------- */
+
+    const salaryDetRows = await db.SalaryDet.findAll({
+        attributes: ['EmpMstId'],
+        where: { SalaryMstId: salaryMstId },
+        transaction
+    });
+    const empIds = salaryDetRows.map(r => r.EmpMstId);
+
+    if (empIds.length > 0) {
+        await db.LoanDeduction.destroy({
+            where: {
+                DeductionMonth: salaryMst.SalaryMonth,
+                EmpMstId: { [Op.in]: empIds }
+            },
+            transaction
+        });
+
+        // Re-open any loans that were auto-closed but now have outstanding balance again
+        await db.sequelize.query(`
+            UPDATE LoanMst 
+            SET IsClosed = 0, 
+                CloseRemark = NULL,
+                Sflag = 'U',
+                LogID = :LogID,
+                PcID = :PcID
+            WHERE EmpMstId IN (:empIds) 
+              AND IsClosed = 1
+              AND CloseRemark = 'Auto-closed after full deduction'
+              AND LoanAmount > (
+                  SELECT COALESCE(SUM(DeductedAmount), 0) 
+                  FROM LoanDeduction 
+                  WHERE LoanMstId = LoanMst.LoanMstId AND Active = 1
+              )
+        `, {
+            replacements: { 
+                empIds,
+                LogID: req.user?.UserMstId || null,
+                PcID: req.ip
+            },
+            transaction
+        });
+    }
 
     /* ---------------- Delete Salary Details ---------------- */
 

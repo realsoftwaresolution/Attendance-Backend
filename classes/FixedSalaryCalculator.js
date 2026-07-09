@@ -2,6 +2,7 @@ const AdvanceManager = require('./AdvanceManager');
 const FinalSalaryManager = require('./FinalSalaryManager');
 const SalaryHelper = require('./SalaryHelper');
 const TaxManager = require('./taxes/TaxManager');
+const LoanManager = require('./LoanManager');
 
 class FixedSalaryCalculator {
 
@@ -32,11 +33,16 @@ class FixedSalaryCalculator {
         /* ---------------- 3. Salary Distribution ---------------- */
         this.calculateSalaryDistribution(context);
 
-        /* ---------------- 4. Tax Calculation ---------------- */
-        await TaxManager.calculate(context);
-        /* ---------------- 5. Advanced Calculation ---------------- */
+        /* ---------------- 4. Advanced Calculation ---------------- */
         await AdvanceManager.calculate(context);
-        /* ---------------- 6. Fianl Salary Calculation ---------------- */
+
+        /* ---------------- 5. Loan Calculation ---------------- */
+        await LoanManager.calculate(context);
+
+        /* ---------------- 6. Tax Calculation ---------------- */
+        await TaxManager.calculate(context);
+
+        /* ---------------- 7. Final Salary Calculation ---------------- */
         FinalSalaryManager.calculate(context);
 
         return context;

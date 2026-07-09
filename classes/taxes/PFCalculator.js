@@ -30,7 +30,7 @@ class PFCalculator {
 
         const salaryMonthDate = `${month}-01`;
 
-        const bankSalary = Number(context.bankPayableSalary || 0);
+        const bankSalary = Number(context.bankSalaryAfterLoan || 0);
 
         if (bankSalary <= 0) {
             context.taxMessages.push(
@@ -132,6 +132,7 @@ class PFCalculator {
             );
 
         /* ---------------------------- Update Context ---------------------------- */
+
 
         context.pfApplicable = true;
 

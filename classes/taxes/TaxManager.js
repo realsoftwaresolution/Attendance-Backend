@@ -22,11 +22,8 @@ class TaxManager {
 
         context.bankSalaryAfterTax =
             SalaryHelper.roundMoney(
-                Math.max(
-                    0,
-                    context.bankPayableSalary -
-                    context.totalStatutoryDeductions
-                )
+                (context.bankSalaryAfterLoan || 0) -
+                context.totalStatutoryDeductions
             );
     }
 }

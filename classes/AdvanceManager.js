@@ -42,12 +42,6 @@ class AdvanceManager {
                 Number(context.cashPayableSalary || 0)
                 - outstandingAdvance
             );
-
-        context.netPayableSalary =
-            SalaryHelper.roundMoney(
-                Number(context.bankSalaryAfterTax || 0)
-                + Number(context.cashSalaryAfterAdvance || 0)
-            );
     }
 }
 

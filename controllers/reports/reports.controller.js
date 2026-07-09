@@ -767,7 +767,7 @@ exports.getSalarySlipReport = async (req, res, next) => {
       SD.EmpMstId, SD.EmpCode, SD.EmpFullName, SD.CompanyName, SD.Department, SD.Designation,
       SD.BankPayableSalary, SD.CashPayableSalary, SD.TotalOutstandingAdvance,
       SD.CashSalaryAfterAdvance, SD.NetPayableSalary, SD.SalaryCalculationMethod,
-      SD.SalaryPerMinuteRate
+      SD.SalaryPerMinuteRate, SD.LoanDeductionBank, SD.LoanDeductionCash
     FROM SalaryDet SD
     ${whereClause}
   `;
@@ -805,6 +805,36 @@ exports.getSalarySlipReport = async (req, res, next) => {
     summaryMap[s.EmpMstId] += netOT;
   }
 
+  // Fetch Loan Details (Total Active Amount & Outstanding)
+  const queryLoans = `
+    SELECT 
+        lm.EmpMstId, 
+        COALESCE(SUM(lm.LoanAmount), 0) as TotalActiveLoanAmount,
+        COALESCE(SUM(lm.LoanAmount), 0) - COALESCE(SUM(ld.TotalDeducted), 0) as TotalOutstandingAmount
+    FROM LoanMst lm
+    LEFT JOIN (
+        SELECT LoanMstId, SUM(DeductedAmount) as TotalDeducted 
+        FROM LoanDeduction 
+        WHERE Active = 1 
+        GROUP BY LoanMstId
+    ) ld ON lm.LoanMstId = ld.LoanMstId
+    WHERE lm.Active = 1 AND lm.IsClosed = 0 AND lm.EmpMstId IN (:empMstIds)
+    GROUP BY lm.EmpMstId
+  `;
+
+  const loanSummaries = await db.sequelize.query(queryLoans, {
+    replacements: { empMstIds },
+    type: QueryTypes.SELECT,
+  });
+
+  const loanMap = {};
+  for (const l of loanSummaries) {
+    loanMap[l.EmpMstId] = {
+      TotalActiveLoanAmount: Number(l.TotalActiveLoanAmount || 0),
+      TotalOutstandingAmount: Number(l.TotalOutstandingAmount || 0)
+    };
+  }
+
   // Do parallel work for each employee calculation for fast report generation
   const result = await Promise.all(salaryRecords.map(async (emp) => {
     const totalOTMins = summaryMap[emp.EmpMstId] || 0;
@@ -820,6 +850,11 @@ exports.getSalarySlipReport = async (req, res, next) => {
       CashPayableSalary: emp.CashPayableSalary || 0,
       TotalOutstandingAdvance: emp.TotalOutstandingAdvance || 0,
       CashSalaryAfterAdvance: emp.CashSalaryAfterAdvance || 0,
+      LoanDeductionBank: emp.LoanDeductionBank || 0,
+      LoanDeductionCash: emp.LoanDeductionCash || 0,
+      TotalLoanDeduction: (emp.LoanDeductionBank || 0) + (emp.LoanDeductionCash || 0),
+      TotalActiveLoanAmount: loanMap[emp.EmpMstId]?.TotalActiveLoanAmount || 0,
+      TotalOutstandingLoanAmount: loanMap[emp.EmpMstId]?.TotalOutstandingAmount || 0,
       NetPayableSalary: emp.NetPayableSalary || 0,
       SalaryCalculationMethod: emp.SalaryCalculationMethod || '-',
       TotalOTHours: SalaryHelper.minutesToHHMM(totalOTMins),

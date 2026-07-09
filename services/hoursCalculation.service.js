@@ -215,6 +215,15 @@ async function generateDailyAttendanceData({
               "YYYY-MM-DD HH:mm:ss",
               TIMEZONE,
             );
+      // FIX: If Pre-OT starts at a time later than the shift starts, it crossed midnight backwards!
+      if (assignedShift.IsPreShiftOT && assignedShift.PreShiftOTIn) {
+        // Comparing strings like "20:00:00" > "08:30:00" works perfectly in JS
+        if (assignedShift.PreShiftOTIn > assignedShift.ShiftIn) {
+          earliestStart.subtract(1, "day");
+        }
+      }
+
+      // Keep your original 1-hour buffer
       const startBound = earliestStart.subtract(1, "hours");
 
       // LATEST END (OT or Shift)
@@ -231,7 +240,18 @@ async function generateDailyAttendanceData({
               TIMEZONE,
             );
 
-      if (isNightShift) latestEnd.add(1, "day");
+      if (
+        assignedShift.IsPostShiftOT &&
+        assignedShift.PostShiftOTIn &&
+        assignedShift.PostShiftOTOut
+      ) {
+        if (assignedShift.PostShiftOTOut < assignedShift.PostShiftOTIn) {
+          latestEnd.add(1, "day");
+        }
+      } else if (isNightShift) {
+        latestEnd.add(1, "day");
+      }
+
       const endBound = latestEnd.add(1, "hours");
 
       const dayPunches = allAvailable.filter((p) => {

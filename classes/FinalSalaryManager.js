@@ -8,7 +8,7 @@ class FinalSalaryManager {
             SalaryHelper.roundMoney(
                 Number(context.bankSalaryAfterTax || 0)
                 +
-                Number(context.cashSalaryAfterAdvance || 0)
+                Number(context.cashSalaryAfterLoan || 0)
             );
     }
 }
