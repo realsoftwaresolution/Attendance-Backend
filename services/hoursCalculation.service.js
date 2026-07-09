@@ -15,26 +15,12 @@ async function generateDailyAttendanceData({
 
   let start, end;
   if (month) {
-    start = moment
-      .tz(month, "YYYY-MM", TIMEZONE)
-      .startOf("month")
-      .format("YYYY-MM-DD HH:mm:ss");
-    end = moment
-      .tz(month, "YYYY-MM", TIMEZONE)
-      .endOf("month")
-      .add(2, "days")
-      .endOf("day")
-      .format("YYYY-MM-DD HH:mm:ss");
+    start = moment.tz(month, "YYYY-MM", TIMEZONE).startOf("month").format("YYYY-MM-DD HH:mm:ss");
+    // Fetch +2 days at the end of the month to capture deep crossing-midnight/post-OT punches safely
+    end = moment.tz(month, "YYYY-MM", TIMEZONE).endOf("month").add(2, "days").endOf("day").format("YYYY-MM-DD HH:mm:ss");
   } else if (date) {
-    start = moment
-      .tz(date, TIMEZONE)
-      .startOf("day")
-      .format("YYYY-MM-DD HH:mm:ss");
-    end = moment
-      .tz(date, TIMEZONE)
-      .endOf("day")
-      .add(1, "day")
-      .format("YYYY-MM-DD HH:mm:ss"); // +1 day for Night Shift buffer
+    start = moment.tz(date, TIMEZONE).startOf("day").format("YYYY-MM-DD HH:mm:ss");
+    end = moment.tz(date, TIMEZONE).endOf("day").add(2, "days").endOf("day").format("YYYY-MM-DD HH:mm:ss");
   } else {
     throw new AppError("Either 'month' or 'date' must be provided.", 500);
   }
@@ -50,6 +36,7 @@ async function generateDailyAttendanceData({
   const empCodes = employees.map((x) => x.EmpCode);
   const companyMstId = employees[0].CompanyMstId;
 
+  // 1. FETCH FLAT PUNCHES CHRONOLOGICALLY
   const rawPunches = await db.sequelize.query(
     `
         SELECT id, EmpCode, FORMAT(punchTime, 'yyyy-MM-dd HH:mm:ss') AS punchTime, punchType, punchSource
@@ -62,12 +49,11 @@ async function generateDailyAttendanceData({
     },
   );
 
-  const logsMap = {};
+  // Group into a flat chronological stream per individual employee
+  const employeePunchesMap = {};
   rawPunches.forEach((punch) => {
-    const punchDate = moment.tz(punch.punchTime, TIMEZONE).format("YYYY-MM-DD");
-    logsMap[punch.EmpCode] ??= {};
-    logsMap[punch.EmpCode][punchDate] ??= [];
-    logsMap[punch.EmpCode][punchDate].push(punch);
+    employeePunchesMap[punch.EmpCode] ??= [];
+    employeePunchesMap[punch.EmpCode].push(punch);
   });
 
   const departmentShifts = await db.sequelize.query(
@@ -99,171 +85,29 @@ async function generateDailyAttendanceData({
     holidayMap[moment.tz(h.Date, TIMEZONE).format("YYYY-MM-DD")] = h.Holiday;
   });
 
-  // Determine the range of dates to process
   let targetDates = [];
-
   if (month) {
-    const totalDaysInMonth = moment
-      .tz(month, "YYYY-MM", TIMEZONE)
-      .daysInMonth();
+    const totalDaysInMonth = moment.tz(month, "YYYY-MM", TIMEZONE).daysInMonth();
     targetDates = Array.from({ length: totalDaysInMonth }, (_, i) =>
-      moment
-        .tz(month, "YYYY-MM", TIMEZONE)
-        .startOf("month")
-        .add(i, "days")
-        .format("YYYY-MM-DD"),
+      moment.tz(month, "YYYY-MM", TIMEZONE).startOf("month").add(i, "days").format("YYYY-MM-DD")
     );
   } else if (date) {
-    // For a single day, the array contains only one date string
     targetDates = [moment.tz(date, TIMEZONE).format("YYYY-MM-DD")];
   }
 
   const dailyRecords = [];
-  const claimedPunchIds = new Set();
 
   for (const emp of employees) {
-    const empFlatPunches = logsMap[emp.EmpCode] || [];
-    for (const dateStr of targetDates) {
-      const currentDate = moment.tz(dateStr, "YYYY-MM-DD", TIMEZONE);
-
-      const validShifts = departmentShifts.filter((s) => {
-        const fromDate = moment(s.FromDate);
-        const toDate = s.ToDate ? moment(s.ToDate) : null;
-
-        // Check if the current day is within the active date range of the shift
-        const isAfterFrom = currentDate.isSameOrAfter(fromDate, "day");
-        const isBeforeTo = toDate
-          ? currentDate.isSameOrBefore(toDate, "day")
-          : true;
-
-        return isAfterFrom && isBeforeTo;
-      });
-
-      const todayPunches = empFlatPunches[dateStr] || [];
-      const nextDayPunches =
-        empFlatPunches[moment(dateStr).add(1, "day").format("YYYY-MM-DD")] ||
-        [];
-      const allAvailable = [...todayPunches, ...nextDayPunches].filter(
-        (p) => !claimedPunchIds.has(p.id),
-      );
-
-      // 2. FIND ASSIGNED SHIFT: Based on the first "IN" punch of the day
-      const firstIn = allAvailable
-        .filter((p) => p.punchType?.toUpperCase() === "IN")
-        .sort((a, b) => moment(a.punchTime) - moment(b.punchTime))[0];
-
-      const holidayName = holidayMap[dateStr] || null;
+    const allEmpPunches = employeePunchesMap[emp.EmpCode] || [];
+    const businessDateRecords = {};
+    
+    // Initialize target calendar dates with base attendance templates
+    targetDates.forEach(dStr => {
+      const holidayName = holidayMap[dStr] || null;
       const isHoliday = !!holidayName;
-
-      let assignedShift = null;
-      if (firstIn) {
-        const punchMin =
-          moment.tz(firstIn.punchTime, TIMEZONE).hours() * 60 +
-          moment.tz(firstIn.punchTime, TIMEZONE).minutes();
-        assignedShift = validShifts.reduce((best, curr) => {
-          const [h, m] = curr.ShiftIn.split(":").map(Number);
-          const diff = Math.abs(punchMin - (h * 60 + m));
-          return !best || diff < best.diff ? { shift: curr, diff } : best;
-        }, null)?.shift;
-      } else {
-        assignedShift = validShifts[0];
-      }
-
-      if (!assignedShift) {
-        dailyRecords.push({
-          Date: dateStr,
-          EmpCode: emp.EmpCode,
-          EmployeeName: emp.EmpFullName,
-          EmpMstId: emp.EmpMstId,
-          ShiftEntryMstId: null,
-          ShiftType: null,
-          WorkHours: "00:00",
-          OTHours: "00:00",
-          LunchBreak: "00:00",
-          GapMinutes: "00:00",
-          LateMinutes: "00:00",
-          EarlyOutMinutes: "00:00",
-          FinalTotalHours: "00:00",
-          Status: isHoliday ? "Holiday" : "Absent",
-          IsHoliday: isHoliday,
-          HolidayName: holidayName,
-          Remark: isAuto
-            ? `No Shift Assigned - Auto Job Generated`
-            : "No Shift Assigned",
-        });
-
-        continue;
-      }
-
-      const [inH, inM] = assignedShift.ShiftIn.split(":").map(Number);
-      const shiftInMinutes = inH * 60 + (inM || 0);
-      const [outH, outM] = assignedShift.ShiftOut.split(":").map(Number);
-      const shiftOutMinutes = outH * 60 + (outM || 0);
-
-      const isNightShift = shiftOutMinutes <= shiftInMinutes;
-
-      // EARLIEST START (OT or Shift)
-      const earliestStart =
-        assignedShift.IsPreShiftOT && assignedShift.PreShiftOTIn
-          ? moment.tz(
-              `${dateStr} ${assignedShift.PreShiftOTIn}`,
-              "YYYY-MM-DD HH:mm:ss",
-              TIMEZONE,
-            )
-          : moment.tz(
-              `${dateStr} ${assignedShift.ShiftIn}`,
-              "YYYY-MM-DD HH:mm:ss",
-              TIMEZONE,
-            );
-      // FIX: If Pre-OT starts at a time later than the shift starts, it crossed midnight backwards!
-      if (assignedShift.IsPreShiftOT && assignedShift.PreShiftOTIn) {
-        // Comparing strings like "20:00:00" > "08:30:00" works perfectly in JS
-        if (assignedShift.PreShiftOTIn > assignedShift.ShiftIn) {
-          earliestStart.subtract(1, "day");
-        }
-      }
-
-      // Keep your original 1-hour buffer
-      const startBound = earliestStart.subtract(1, "hours");
-
-      // LATEST END (OT or Shift)
-      let latestEnd =
-        assignedShift.IsPostShiftOT && assignedShift.PostShiftOTOut
-          ? moment.tz(
-              `${dateStr} ${assignedShift.PostShiftOTOut}`,
-              "YYYY-MM-DD HH:mm:ss",
-              TIMEZONE,
-            )
-          : moment.tz(
-              `${dateStr} ${assignedShift.ShiftOut}`,
-              "YYYY-MM-DD HH:mm:ss",
-              TIMEZONE,
-            );
-
-      if (
-        assignedShift.IsPostShiftOT &&
-        assignedShift.PostShiftOTIn &&
-        assignedShift.PostShiftOTOut
-      ) {
-        if (assignedShift.PostShiftOTOut < assignedShift.PostShiftOTIn) {
-          latestEnd.add(1, "day");
-        }
-      } else if (isNightShift) {
-        latestEnd.add(1, "day");
-      }
-
-      const endBound = latestEnd.add(1, "hours");
-
-      const dayPunches = allAvailable.filter((p) => {
-        const pTime = moment.tz(p.punchTime, TIMEZONE);
-        const isWithin =
-          pTime.isSameOrAfter(startBound) && pTime.isSameOrBefore(endBound);
-        if (isWithin) claimedPunchIds.add(p.id);
-        return isWithin;
-      });
-
-      let metrics = {
-        Date: dateStr,
+      
+      businessDateRecords[dStr] = {
+        Date: dStr,
         EmpCode: emp.EmpCode,
         EmployeeName: emp.EmpFullName,
         EmpMstId: emp.EmpMstId,
@@ -277,20 +121,117 @@ async function generateDailyAttendanceData({
         Status: isHoliday ? "Holiday" : "Absent",
         IsHoliday: isHoliday,
         HolidayName: holidayName,
-        ShiftType: assignedShift.ShiftType,
-        ShiftEntryMstId: assignedShift.ShiftEntryMstId,
+        ShiftType: null,
+        ShiftEntryMstId: null,
         Remark: isAuto ? `By Auto Job Generated` : "-",
+        _punches: [] // Temporary allocation bucket
       };
+    });
 
-      metrics = AttendanceEngine.calculateDayMetrics(
-        metrics,
-        dateStr,
-        dayPunches,
-        assignedShift,
-        isNightShift,
-      );
+    // 2. CHRONOLOGICAL ALLOCATION USING DYNAMIC DAY-BREAK FENCE
+    allEmpPunches.forEach((punch) => {
+      const pTime = moment.tz(punch.punchTime, TIMEZONE);
+      const calendarDateStr = pTime.format("YYYY-MM-DD");
+      
+      let assignedBusinessDate = calendarDateStr;
 
-      dailyRecords.push(metrics);
+      // Find the shift matching this calendar day to check its configuration rules
+      const activeShift = departmentShifts.find((s) => {
+        const fromDate = moment(s.FromDate);
+        const toDate = s.ToDate ? moment(s.ToDate) : null;
+        return pTime.isSameOrAfter(fromDate, "day") && (!toDate || pTime.isSameOrBefore(toDate, "day"));
+      });
+
+      if (activeShift) {
+        // Find the absolute earliest boundary this shift can begin (Pre-OT or Regular Shift In)
+        const baseStartToday = activeShift.IsPreShiftOT && activeShift.PreShiftOTIn
+          ? moment.tz(`${calendarDateStr} ${activeShift.PreShiftOTIn}`, "YYYY-MM-DD HH:mm:ss", TIMEZONE)
+          : moment.tz(`${calendarDateStr} ${activeShift.ShiftIn}`, "YYYY-MM-DD HH:mm:ss", TIMEZONE);
+
+        // Adjust back 1 day if Pre-OT begins before midnight on the previous calendar eve
+        if (activeShift.IsPreShiftOT && activeShift.PreShiftOTIn && activeShift.PreShiftOTIn > activeShift.ShiftIn) {
+          baseStartToday.subtract(1, "day");
+        }
+
+        // DYNAMIC CUTOFF FENCE: 4 Hours prior to the earliest conceivable shift/Pre-OT launch
+        // We use 4 hours instead of 1 hour so that extremely early IN punches (e.g. 07:02 for an 08:30 shift)
+        // are correctly assigned to TODAY instead of being pushed to yesterday.
+        const dayBreakCutoffToday = moment(baseStartToday).subtract(4, "hours");
+
+        // EVALUATE 'IN' PUNCHES
+        if (punch.punchType?.toUpperCase() === "IN") {
+          // If arrival lands before the morning fence line, it belongs to yesterday's late shift assignment
+          if (pTime.isBefore(dayBreakCutoffToday)) {
+            assignedBusinessDate = moment(calendarDateStr).subtract(1, "day").format("YYYY-MM-DD");
+          }
+        }
+        
+        // EVALUATE 'OUT' PUNCHES
+        if (punch.punchType?.toUpperCase() === "OUT") {
+          const prevDayStr = moment(calendarDateStr).subtract(1, "day").format("YYYY-MM-DD");
+          const prevDayRecord = businessDateRecords[prevDayStr];
+          
+          // ODD/EVEN RULE: If yesterday has an open, unmatched IN punch, this morning OUT belongs to yesterday.
+          if (prevDayRecord && prevDayRecord._punches.length % 2 !== 0) {
+            assignedBusinessDate = prevDayStr;
+          }
+        }
+      }
+
+      // If mapped destination falls within the targeted date bounds, push it into that day's timeline
+      if (businessDateRecords[assignedBusinessDate]) {
+        businessDateRecords[assignedBusinessDate]._punches.push(punch);
+      }
+    });
+
+    // 3. EXECUTE METRICS ENGINE ON SANITIZED BUCKETS
+    for (const dStr of targetDates) {
+      const record = businessDateRecords[dStr];
+      
+      const validShifts = departmentShifts.filter((s) => {
+        const fromDate = moment(s.FromDate);
+        const toDate = s.ToDate ? moment(s.ToDate) : null;
+        return moment(dStr).isSameOrAfter(fromDate, "day") && (!toDate || moment(dStr).isSameOrBefore(toDate, "day"));
+      });
+
+      let assignedShift = null;
+      // Match the shift nearest to the primary arrival punch
+      if (record._punches.length > 0) {
+        const firstIn = record._punches.find(p => p.punchType?.toUpperCase() === "IN") || record._punches[0];
+        const punchMin = moment.tz(firstIn.punchTime, TIMEZONE).hours() * 60 + moment.tz(firstIn.punchTime, TIMEZONE).minutes();
+        
+        assignedShift = validShifts.reduce((best, curr) => {
+          const [h, m] = curr.ShiftIn.split(":").map(Number);
+          const diff = Math.abs(punchMin - (h * 60 + m));
+          return !best || diff < best.diff ? { shift: curr, diff } : best;
+        }, null)?.shift;
+      }
+      
+      assignedShift = assignedShift || validShifts[0];
+
+      if (assignedShift) {
+        record.ShiftType = assignedShift.ShiftType;
+        record.ShiftEntryMstId = assignedShift.ShiftEntryMstId;
+
+        const [inH, inM] = assignedShift.ShiftIn.split(":").map(Number);
+        const [outH, outM] = assignedShift.ShiftOut.split(":").map(Number);
+        const isNightShift = (outH * 60 + outM) <= (inH * 60 + inM);
+
+        // Execute your core engine logic safely
+        const finalMetrics = AttendanceEngine.calculateDayMetrics(
+          record,
+          dStr,
+          record._punches,
+          assignedShift,
+          isNightShift
+        );
+        
+        delete finalMetrics._punches;
+        dailyRecords.push(finalMetrics);
+      } else {
+        delete record._punches;
+        dailyRecords.push(record);
+      }
     }
   }
 
