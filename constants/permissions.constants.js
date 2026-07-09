@@ -15,7 +15,7 @@ const FORMS = Object.freeze({
   HOLIDAY: "FrmHoliday",
   ADVANCED_ENTRY: "FrmAdvancedEntry",
   COUNTER: "FrmCounter",
-  LOAN:"FrmLoan",
+  LOAN:"FrmLoanEntry",
 
   PF_MASTER: "FrmPFMst",
   PT_MASTER: "FrmPTMst",

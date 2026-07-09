@@ -19,8 +19,11 @@ const getReportDates = (FromDate, ToDate) => {
 };
 
 const buildReportQuery = (req, fromDate, toDate) => {
-  const { EmpCode, EmpMstId, DepartmentMstId, CompanyMstId, DesignationMstId } =
-    req.query;
+  const EmpCode = req.query.EmpCode || req.query.empCode;
+  const EmpMstId = req.query.EmpMstId || req.query.empMstId;
+  const DepartmentMstId = req.query.DepartmentMstId || req.query.departmentMstId;
+  const CompanyMstId = req.query.CompanyMstId || req.query.companyMstId;
+  const DesignationMstId = req.query.DesignationMstId || req.query.designationMstId;
 
   let whereClause = `WHERE 1=1`;
   const replacements = { FromDate: fromDate, ToDate: toDate };
@@ -115,8 +118,8 @@ const processPunchPairing = (employeeRecord, row) => {
 
 exports.getDailyInOutReport = async (req, res, next) => {
   const { fromDate, toDate } = getReportDates(
-    req.query.FromDate,
-    req.query.ToDate,
+    req.query.FromDate || req.query.fromDate,
+    req.query.ToDate || req.query.toDate
   );
   const { query, replacements } = buildReportQuery(req, fromDate, toDate);
 
@@ -196,8 +199,8 @@ exports.getDailyInOutReport = async (req, res, next) => {
 
 exports.getDepartmentWiseInOutReport = async (req, res, next) => {
   const { fromDate, toDate } = getReportDates(
-    req.query.FromDate,
-    req.query.ToDate,
+    req.query.FromDate || req.query.fromDate,
+    req.query.ToDate || req.query.toDate
   );
   const { query, replacements } = buildReportQuery(req, fromDate, toDate);
 
@@ -333,8 +336,8 @@ exports.getDepartmentWiseInOutReport = async (req, res, next) => {
 
 exports.getEmployeeWiseInOutReport = async (req, res, next) => {
   const { fromDate, toDate } = getReportDates(
-    req.query.FromDate,
-    req.query.ToDate,
+    req.query.FromDate || req.query.fromDate,
+    req.query.ToDate || req.query.toDate
   );
   const { query, replacements } = buildReportQuery(req, fromDate, toDate);
 
