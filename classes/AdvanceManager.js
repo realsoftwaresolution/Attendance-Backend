@@ -37,10 +37,15 @@ class AdvanceManager {
         context.totalOutstandingAdvance =
             SalaryHelper.roundMoney(outstandingAdvance);
 
+        // Default the entire advance deduction to Cash to preserve existing functionality.
+        // The user can override these split values on the frontend before saving.
+        context.advanceDeductionCash = SalaryHelper.roundMoney(outstandingAdvance);
+        context.advanceDeductionBank = 0;
+
         context.cashSalaryAfterAdvance =
             SalaryHelper.roundMoney(
                 Number(context.cashPayableSalary || 0)
-                - outstandingAdvance
+                - context.advanceDeductionCash
             );
     }
 }

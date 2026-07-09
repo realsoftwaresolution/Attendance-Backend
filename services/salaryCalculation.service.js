@@ -204,6 +204,8 @@ async function calculateDepartmentSalary({ month, departmentId }) {
                     context.bankSalaryAfterTax,
                 /* ---------------- advanced deduction ---------------- */
                 TotalOutstandingAdvance: context.totalOutstandingAdvance,
+                AdvanceDeductionBank: context.advanceDeductionBank,
+                AdvanceDeductionCash: context.advanceDeductionCash,
                 CashSalaryAfterAdvance: context.cashSalaryAfterAdvance,
                 /* ---------------- loan deduction ---------------- */
                 LoanDeductionBank: context.loanDeductionBank,

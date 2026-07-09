@@ -104,11 +104,16 @@ exports.saveSalary = async (req, res, next) => {
             bankPayableSalary: Number(item.BankPayableSalary || 0),
             cashPayableSalary: Number(item.CashPayableSalary || 0),
             totalOutstandingAdvance: Number(item.TotalOutstandingAdvance || 0),
-            cashSalaryAfterAdvance: Number(item.CashPayableSalary || 0) - Number(item.TotalOutstandingAdvance || 0),
+            advanceDeductionBank: Number(item.AdvanceDeductionBank || 0),
+            advanceDeductionCash: Number(item.AdvanceDeductionCash || 0),
             loanDeductionBank: Number(item.LoanDeductionBank || 0),
             loanDeductionCash: Number(item.LoanDeductionCash || 0),
-            bankSalaryAfterLoan: Number(item.BankPayableSalary || 0) - Number(item.LoanDeductionBank || 0),
         };
+        
+        context.cashSalaryAfterAdvance = context.cashPayableSalary - context.advanceDeductionCash;
+        let bankSalaryAfterAdvance = context.bankPayableSalary - context.advanceDeductionBank;
+        
+        context.bankSalaryAfterLoan = bankSalaryAfterAdvance - context.loanDeductionBank;
         context.cashSalaryAfterLoan = context.cashSalaryAfterAdvance - context.loanDeductionCash;
 
         await TaxManager.calculate(context);
@@ -133,6 +138,8 @@ exports.saveSalary = async (req, res, next) => {
         item.TotalStatutoryDeductions = context.totalStatutoryDeductions || 0;
         item.BankSalaryAfterTax = context.bankSalaryAfterTax || 0;
         
+        item.AdvanceDeductionBank = context.advanceDeductionBank || 0;
+        item.AdvanceDeductionCash = context.advanceDeductionCash || 0;
         item.CashSalaryAfterAdvance = context.cashSalaryAfterAdvance || 0;
         item.CashSalaryAfterLoan = context.cashSalaryAfterLoan || 0;
         item.BankSalaryAfterLoan = context.bankSalaryAfterLoan || 0;

@@ -767,7 +767,8 @@ exports.getSalarySlipReport = async (req, res, next) => {
       SD.EmpMstId, SD.EmpCode, SD.EmpFullName, SD.CompanyName, SD.Department, SD.Designation,
       SD.BankPayableSalary, SD.CashPayableSalary, SD.TotalOutstandingAdvance,
       SD.CashSalaryAfterAdvance, SD.NetPayableSalary, SD.SalaryCalculationMethod,
-      SD.SalaryPerMinuteRate, SD.LoanDeductionBank, SD.LoanDeductionCash
+      SD.SalaryPerMinuteRate, SD.LoanDeductionBank, SD.LoanDeductionCash,
+      SD.AdvanceDeductionBank, SD.AdvanceDeductionCash
     FROM SalaryDet SD
     ${whereClause}
   `;
@@ -840,23 +841,25 @@ exports.getSalarySlipReport = async (req, res, next) => {
     const totalOTMins = summaryMap[emp.EmpMstId] || 0;
     const otAmount = SalaryHelper.roundMoney(totalOTMins * (emp.SalaryPerMinuteRate || 0));
 
+    const totalAdvanceDeduction = (emp.AdvanceDeductionBank || 0) + (emp.AdvanceDeductionCash || 0);
+    const totalLoanDeduction = (emp.LoanDeductionBank || 0) + (emp.LoanDeductionCash || 0);
+    const netPayableSalary = emp.NetPayableSalary || 0;
+    
+    // TotalSalary is Net Salary + Deductions - OT
+    const totalSalary = SalaryHelper.roundMoney(netPayableSalary + totalAdvanceDeduction + totalLoanDeduction - otAmount);
+
     return {
       EmpCode: emp.EmpCode,
       EmpFullName: emp.EmpFullName,
       CompanyName: emp.CompanyName || '-',
       Department: emp.Department || '-',
       Designation: emp.Designation || '-',
-      BankPayableSalary: emp.BankPayableSalary || 0,
-      CashPayableSalary: emp.CashPayableSalary || 0,
-      TotalOutstandingAdvance: emp.TotalOutstandingAdvance || 0,
-      CashSalaryAfterAdvance: emp.CashSalaryAfterAdvance || 0,
-      LoanDeductionBank: emp.LoanDeductionBank || 0,
-      LoanDeductionCash: emp.LoanDeductionCash || 0,
-      TotalLoanDeduction: (emp.LoanDeductionBank || 0) + (emp.LoanDeductionCash || 0),
+      TotalAdvanceDeduction: totalAdvanceDeduction,
+      TotalLoanDeduction: totalLoanDeduction,
       TotalActiveLoanAmount: loanMap[emp.EmpMstId]?.TotalActiveLoanAmount || 0,
       TotalOutstandingLoanAmount: loanMap[emp.EmpMstId]?.TotalOutstandingAmount || 0,
-      NetPayableSalary: emp.NetPayableSalary || 0,
-      SalaryCalculationMethod: emp.SalaryCalculationMethod || '-',
+      TotalSalary: totalSalary,
+      NetPayableSalary: netPayableSalary,
       TotalOTHours: SalaryHelper.minutesToHHMM(totalOTMins),
       OTAmount: otAmount
     };

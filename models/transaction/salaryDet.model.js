@@ -99,6 +99,8 @@ function salaryDet(sequelize) {
         TotalStatutoryDeductions: { type: DataTypes.DECIMAL(18, 2), defaultValue: 0 },
         BankSalaryAfterTax: { type: DataTypes.DECIMAL(18, 2), defaultValue: 0 },
         TotalOutstandingAdvance: { type: DataTypes.DECIMAL(18, 2), defaultValue: 0 },
+        AdvanceDeductionBank: { type: DataTypes.DECIMAL(18, 2), defaultValue: 0 },
+        AdvanceDeductionCash: { type: DataTypes.DECIMAL(18, 2), defaultValue: 0 },
         CashSalaryAfterAdvance: { type: DataTypes.DECIMAL(18, 2), defaultValue: 0 },
         LoanDeductionBank: { type: DataTypes.DECIMAL(18, 2), defaultValue: 0 },
         LoanDeductionCash: { type: DataTypes.DECIMAL(18, 2), defaultValue: 0 },
