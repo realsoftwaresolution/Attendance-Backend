@@ -373,7 +373,8 @@ exports.getAllEmployees = async (req, res, next) => {
                 sh.EffectiveMonth,
                 d.Department AS EmpDepartment,
                 dg.Designation AS EmpDesignation,
-                c.CompanyName AS EmpCompanyName
+                c.CompanyName AS EmpCompanyName,
+                c.Address AS EmpCompanyAddress
             FROM EmployeeMst e
             LEFT JOIN (
                 SELECT *, 
