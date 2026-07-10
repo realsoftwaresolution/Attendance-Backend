@@ -7,9 +7,25 @@ const { companySchema } = require('../../validations/master/company.schema');
 const { verifyToken, checkPermission } = require('../../middlewares/auth.middleware');
 const { FORMS } = require('../../constants/permissions.constants');
 const { createAdvanceSchema } = require('../../validations/master/advanced-entry.validation');
-
+const multer = require('multer');
+const memoryUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB limit
 
 router.use(verifyToken);
+
+// Bulk Import Routes
+router.get(
+    '/bulk-import-template',
+    checkPermission(FORMS.ADVANCED_ENTRY, 'create'),
+    asyncHandler(ctrl.downloadAdvanceImportTemplate)
+);
+
+router.post(
+    '/bulk-import',
+    checkPermission(FORMS.ADVANCED_ENTRY, 'create'),
+    memoryUpload.single('file'),
+    asyncHandler(ctrl.bulkImportAdvances)
+);
+
 router.post("/", checkPermission(FORMS.ADVANCED_ENTRY, 'create'), validate(createAdvanceSchema), asyncHandler(ctrl.createAdvance));
 router.get(
     '/list',

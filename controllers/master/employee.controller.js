@@ -1007,7 +1007,11 @@ exports.bulkImportEmployees = async (req, res, next) => {
 
     // 2. Parse Excel
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(req.file.buffer);
+    try {
+        await workbook.xlsx.load(req.file.buffer);
+    } catch (err) {
+        throw new AppError("Invalid or corrupted Excel file. Please ensure you are uploading a valid .xlsx file format.", 400);
+    }
     const worksheet = workbook.worksheets[0];
 
     const errors = [];
@@ -1125,7 +1129,26 @@ exports.bulkImportEmployees = async (req, res, next) => {
       const { error, value } = employeeRegistrationSchema.validate(payload, { abortEarly: false });
       
       if (error) {
-        rowErrors.push(...error.details.map(err => err.message));
+        const cleanedErrors = error.details
+          .map(err => err.message.replace(/\"/g, ''))
+          .filter(msg => {
+             // If there's a mapping error for a field, hide the redundant 'required' error
+             if (msg.includes('MstId')) {
+                 const fieldName = msg.split('MstId')[0]; // e.g. 'Department'
+                 const hasMappingError = rowErrors.some(e => e.includes(fieldName) && e.includes('not found'));
+                 if (hasMappingError) return false;
+             }
+             return true;
+          })
+          .map(msg => {
+             // Convert 'DepartmentMstId is required' to 'Department column is required'
+             if (msg.includes('MstId')) {
+                 return msg.replace('MstId', ' column');
+             }
+             return msg;
+          });
+
+        rowErrors.push(...cleanedErrors);
       }
 
       if (rowErrors.length > 0) {
