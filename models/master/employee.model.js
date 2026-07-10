@@ -31,7 +31,6 @@ function employeeMstModel(sequelize) {
         EmpPhoneNo: { type: DataTypes.STRING(20) },
         EmpPANNo: { type: DataTypes.STRING(30) },
         AadharCardNo: { type: DataTypes.STRING(20) },
-        EmpESINo: { type: DataTypes.STRING(50) },
 
         EmpAddress: { type: DataTypes.STRING },
         DateOfJoining: { type: DataTypes.STRING },
@@ -101,6 +100,9 @@ function employeeMstModel(sequelize) {
         EmpBankName: { type: DataTypes.STRING },
         EmpBankACNo: { type: DataTypes.STRING(50) },
         EmpBankIFSCode: { type: DataTypes.STRING(20) },
+        EmpBankAddress: { type: DataTypes.STRING(500), allowNull: true },
+
+        DateOfResign: { type: DataTypes.STRING(10), allowNull: true },
 
         // Avatar & Document Reference String Path Storage
         ProfileImage: { type: DataTypes.STRING, allowNull: true },

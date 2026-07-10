@@ -37,11 +37,22 @@ const employeeUploadSchema = [
 
 
 router.use(verifyToken);
+const multer = require('multer');
+const memoryUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB limit
+
 /* ------------------ GET ENDPOINTS ------------------ */
 router.get("/export", checkPermission(FORMS.EMPLOYEE, 'view'), asyncHandler(ctrl.exportEmployeeMasterData));
+router.get("/bulk-import-template", checkPermission(FORMS.EMPLOYEE, 'view'), asyncHandler(ctrl.bulkImportTemplate));
 router.get("/", checkPermission(FORMS.EMPLOYEE, 'view'), asyncHandler(ctrl.getAllEmployees));
 
 /* ------------------ POST ENDPOINT ------------------ */
+router.post(
+    "/bulk-import",
+    checkPermission(FORMS.EMPLOYEE, 'create'),
+    memoryUpload.single('file'),
+    asyncHandler(ctrl.bulkImportEmployees)
+);
+
 router.post(
     "/",
     checkPermission(FORMS.EMPLOYEE, 'create'),

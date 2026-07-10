@@ -55,11 +55,10 @@ const employeeRegistrationSchema = Joi.object({
         }),
 
     SalaryType: Joi.string()
-        .valid('Working', 'Fixed')
+        .valid('Working', 'Fixed', 'None')
         .required()
         .messages({
-            'any.only':
-                'Salary Type must be either Working or Fixed',
+            'any.only': 'Salary Type must be Working, Fixed, or None',
             'any.required': 'Salary Type is required'
         }),
 
@@ -107,20 +106,30 @@ const employeeRegistrationSchema = Joi.object({
         }),
 
     DateOfJoining: Joi.string()
-        .isoDate()
+        .pattern(/^\d{4}-\d{2}-\d{2}$/)
         .required()
         .messages({
-            'string.isoDate':
-                'Date of Joining must be a valid ISO Date format (YYYY-MM-DD)',
+            'string.pattern.base':
+                'Date of Joining must be a valid date format (YYYY-MM-DD)',
             'any.required': 'Date of Joining is required'
         }),
 
-    DateOfBirth: Joi.string()
-        .isoDate()
-        .required()
+    DateOfResign: Joi.string()
+        .pattern(/^\d{4}-\d{2}-\d{2}$/)
+        .allow('', null)
+        .optional()
         .messages({
-            'string.isoDate':
-                'Date of Birth must be a valid ISO Date format (YYYY-MM-DD)'
+            'string.pattern.base':
+                'Date of Resign must be a valid date format (YYYY-MM-DD)'
+        }),
+
+    DateOfBirth: Joi.string()
+        .pattern(/^\d{4}-\d{2}-\d{2}$/)
+        .allow('', null)
+        .optional()
+        .messages({
+            'string.pattern.base':
+                'Date of Birth must be a valid date format (YYYY-MM-DD)'
         }),
 
     EmpGrp: Joi.string()
@@ -149,6 +158,11 @@ const employeeRegistrationSchema = Joi.object({
         .max(30)
         .uppercase()
         .alphanum()
+        .allow('', null)
+        .optional(),
+        
+    EmpBankAddress: Joi.string()
+        .max(500)
         .allow('', null)
         .optional(),
 

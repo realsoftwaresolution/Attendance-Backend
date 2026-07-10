@@ -38,10 +38,36 @@ function salaryDet(sequelize) {
         /* ---------------- Salary Calculations ---------------- */
         BaseSalary: { type: DataTypes.DECIMAL(18, 2), defaultValue: 0 },
         TotalPresentDays: { type: DataTypes.DECIMAL(18, 2), defaultValue: 0 },
-        TotalNormalPresentDays: { type: DataTypes.DECIMAL(18, 2), defaultValue: 0 },
-        TotalHalfDays: { type: DataTypes.DECIMAL(18, 2), defaultValue: 0 },
-        TotalAbsentDays: { type: DataTypes.DECIMAL(18, 2), defaultValue: 0 },
-        PaidHolidayCount: { type: DataTypes.INTEGER, defaultValue: 0 },
+        TotalNormalPresentDays: {
+      type: DataTypes.DECIMAL(10, 2),
+      defaultValue: 0,
+    },
+    TotalHalfDays: {
+      type: DataTypes.DECIMAL(10, 2),
+      defaultValue: 0,
+    },
+    TotalAbsentDays: {
+      type: DataTypes.DECIMAL(10, 2),
+      defaultValue: 0,
+    },
+    /* -------------------------- Monthly Hours Metrics ------------------------- */
+    TotalWorkHours: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      defaultValue: '00:00'
+    },
+    TotalOTHours: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      defaultValue: '00:00'
+    },
+    TotalHours: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      defaultValue: '00:00'
+    },
+    /* ----------------------------- Audit Tracking ----------------------------- */
+    PaidHolidayCount: { type: DataTypes.INTEGER, defaultValue: 0 },
         UnpaidHolidayCount: { type: DataTypes.INTEGER, defaultValue: 0 },
         PaidSundayCount: { type: DataTypes.INTEGER, defaultValue: 0 },
         UnpaidSundayCount: { type: DataTypes.INTEGER, defaultValue: 0 },

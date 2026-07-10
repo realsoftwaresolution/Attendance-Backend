@@ -40,7 +40,7 @@ const seedDatabase = async () => {
             { MenuName: "Holiday", MainMenuName: MAIN_MENU.MASTER, FormName: FORMS.HOLIDAY },
             { MenuName: "Advanced Entry", MainMenuName: MAIN_MENU.MASTER, FormName: FORMS.ADVANCED_ENTRY },
             { MenuName: "Counter", MainMenuName: MAIN_MENU.MASTER, FormName: FORMS.COUNTER },
-            { MenuName: "Loan Entry", MainMenuName: MAIN_MENU.MASTER, FormName: FORMS.LOAN },
+            { MenuName: "Loan Entry", MainMenuName: MAIN_MENU.TRANSACTION, FormName: FORMS.LOAN },
 
             { MenuName: "Provident Fund", MainMenuName: MAIN_MENU.MASTER, FormName: FORMS.PF_MASTER },
             { MenuName: "Professional Tax", MainMenuName: MAIN_MENU.MASTER, FormName: FORMS.PT_MASTER },
@@ -79,6 +79,11 @@ const seedDatabase = async () => {
                     FormName: item.FormName,
                     MainMenuMstId: mainMenu.MainMenuMstId,
                     Active: true
+                });
+            } else if (existingMenu.MainMenuMstId !== mainMenu.MainMenuMstId || existingMenu.MenuName !== item.MenuName) {
+                await existingMenu.update({
+                    MenuName: item.MenuName,
+                    MainMenuMstId: mainMenu.MainMenuMstId
                 });
             }
         }

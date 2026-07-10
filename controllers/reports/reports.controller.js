@@ -1,6 +1,7 @@
 const { QueryTypes, Op } = require("sequelize");
 const db = require("../../config/dbConnection");
 const SalaryHelper = require("../../classes/SalaryHelper");
+const ExcelJS = require("exceljs");
 
 const getReportDates = (FromDate, ToDate) => {
   let fromDate = FromDate;
@@ -882,3 +883,206 @@ exports.getSalarySlipReport = async (req, res, next) => {
     data: result
   });
 };
+
+const fetchSalaryReportData = async (req) => {
+  const EmpCode = req.query.EmpCode || req.query.empCode;
+  const EmpMstId = req.query.EmpMstId || req.query.empMstId;
+  const DepartmentMstId = req.query.DepartmentMstId || req.query.departmentMstId;
+  const CompanyMstId = req.query.CompanyMstId || req.query.companyMstId;
+  const DesignationMstId = req.query.DesignationMstId || req.query.designationMstId;
+  
+  let salaryMonth = req.query.SalaryMonth || req.query.salaryMonth;
+  if (!salaryMonth) {
+    const today = new Date();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    salaryMonth = `${today.getFullYear()}-${month}`;
+  }
+
+  let whereClause = `WHERE SD.SalaryMonth = :SalaryMonth`;
+  const replacements = { SalaryMonth: salaryMonth };
+
+  const applyInFilter = (paramValue, columnName, paramKey) => {
+    if (paramValue) {
+      const values = String(paramValue)
+        .split(",")
+        .map((v) => v.trim())
+        .filter((v) => v !== "");
+        
+      if (values.length > 0) {
+        whereClause += ` AND ${columnName} IN (:${paramKey})`;
+        replacements[paramKey] = values;
+      }
+    }
+  };
+
+  applyInFilter(EmpCode, "E.EmpCode", "EmpCode");
+  applyInFilter(EmpMstId, "E.EmpMstId", "EmpMstId");
+  applyInFilter(DepartmentMstId, "E.DepartmentMstId", "DepartmentMstId");
+  applyInFilter(CompanyMstId, "E.CompanyMstId", "CompanyMstId");
+  applyInFilter(DesignationMstId, "E.DesignationMstId", "DesignationMstId");
+
+  const query = `
+    SELECT 
+      SD.*,
+      E.EmpCode,
+      E.EmpFullName,
+      C.CompanyName,
+      D.Department,
+      DG.Designation
+    FROM SalaryDet SD
+    INNER JOIN EmployeeMst E ON SD.EmpMstId = E.EmpMstId
+    LEFT JOIN CompanyMst C ON E.CompanyMstId = C.CompanyMstId
+    LEFT JOIN DepartmentMst D ON E.DepartmentMstId = D.DepartmentMstId
+    LEFT JOIN DesignationMst DG ON E.DesignationMstId = DG.DesignationMstId
+    ${whereClause}
+    ORDER BY C.CompanyName ASC, D.Department ASC, DG.Designation ASC, E.EmpFullName ASC
+  `;
+
+  return await db.sequelize.query(query, {
+    replacements,
+    type: QueryTypes.SELECT,
+  });
+};
+
+exports.getSalaryReport = async (req, res, next) => {
+  const result = await fetchSalaryReportData(req);
+  
+  return res.status(200).json({
+    success: true,
+    message: "Salary report fetched successfully.",
+    count: result.length,
+    data: result
+  });
+};
+
+exports.getNetSalaryExcel = async (req, res, next) => {
+  const result = await fetchSalaryReportData(req);
+
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Net Salary Report');
+
+  worksheet.columns = [
+    { header: 'Emp Code', key: 'EmpCode', width: 15 },
+    { header: 'Punch ID', key: 'PunchID', width: 15 },
+    { header: 'Emp Name', key: 'EmpFullName', width: 35 },
+    { header: 'Basic', key: 'BaseSalary', width: 15 },
+    { header: 'Department', key: 'Department', width: 30 },
+    { header: 'Designation', key: 'Designation', width: 30 },
+    { header: 'Salary Type', key: 'SalaryType', width: 20 },
+    { header: 'Target Hours', key: 'TargetHours', width: 15 },
+    { header: 'Target Day', key: 'TargetDay', width: 15 },
+    { header: 'Wages Type', key: 'WagesType', width: 20 },
+    { header: 'Month-Year', key: 'MonthYear', width: 15 },
+    { header: 'Paid Days', key: 'PaidDays', width: 15 },
+    { header: 'TotalHrs', key: 'TotalHrs', width: 15 },
+    { header: 'OT Hrs', key: 'OTHrs', width: 15 },
+    { header: 'TotalPayHrs', key: 'TotalPayHrs', width: 15 },
+    { header: 'TotalPayDay', key: 'TotalPayDay', width: 15 },
+    { header: 'Per Day|Hour', key: 'PerDayHour', width: 15 },
+    { header: 'OT/Hrs', key: 'OTPerHrs', width: 15 },
+    { header: 'Salary', key: 'Salary', width: 15 },
+    { header: 'OT Amount', key: 'OTAmount', width: 15 },
+    { header: 'Gross Salary', key: 'GrossSalary', width: 15 },
+    { header: 'Total Upad', key: 'TotalUpad', width: 15 },
+    { header: 'Loan_Installment', key: 'LoanInstallment', width: 20 },
+    { header: 'Total Bonus', key: 'TotalBonus', width: 15 },
+    { header: 'Net Salary', key: 'NetSalary', width: 15 },
+    { header: 'Bank Name', key: 'BankName', width: 30 },
+    { header: 'Bank Account No.', key: 'BankAccountNo', width: 25 },
+    { header: 'IFSC Code', key: 'IFSCCode', width: 15 },
+    { header: 'Bank Address', key: 'BankAddress', width: 35 },
+    { header: 'Bank Pay Mode', key: 'BankPayMode', width: 15 }
+  ];
+
+  worksheet.getRow(1).eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 14 };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF3B3B3B' } };
+    cell.alignment = { vertical: 'middle', horizontal: 'left' };
+    cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+  });
+
+
+
+  result.forEach((emp, index) => {
+    const rowIndex = index + 2;
+
+    const perDayHour = Math.max(Number(emp.SalaryPerMinuteRate) || 0, Number(emp.SalaryPerDayRate) || 0);
+    const otMins = SalaryHelper.parseHHMMToMinutes(emp.TotalOTHours || '00:00');
+    const otAmount = SalaryHelper.roundMoney(otMins * perDayHour);
+    
+    const advanceDedBank = Number(emp.AdvanceDeductionBank) || 0;
+    const advanceDedCash = Number(emp.AdvanceDeductionCash) || 0;
+    const totalUpad = advanceDedBank + advanceDedCash;
+    
+    const loanDedBank = Number(emp.LoanDeductionBank) || 0;
+    const loanDedCash = Number(emp.LoanDeductionCash) || 0;
+    const loanInstallment = loanDedBank + loanDedCash;
+    
+    const netPayableSalary = Number(emp.NetPayableSalary) || 0;
+    
+    const salary = SalaryHelper.roundMoney(netPayableSalary - otAmount + totalUpad + loanInstallment);
+    const grossSalary = SalaryHelper.roundMoney(salary + otAmount);
+
+    const paidDays = (Number(emp.PaidHolidayCount) || 0) + (Number(emp.PaidSundayCount) || 0);
+    const targetHours = SalaryHelper.minutesToHHMM(emp.SalaryExpectedMinutes || 0);
+
+    worksheet.addRow({
+      EmpCode: emp.EmpCode,
+      PunchID: emp.EmpCode,
+      EmpFullName: emp.EmpFullName,
+      BaseSalary: emp.BaseSalary,
+      Department: emp.Department || '-',
+      Designation: emp.Designation || '-',
+      SalaryType: emp.SalaryCalculationMethod || '-',
+      TargetHours: targetHours,
+      TargetDay: emp.SalaryDivisorDays,
+      WagesType: emp.SalaryCalculationMethod || '-',
+      MonthYear: emp.SalaryMonth,
+      PaidDays: paidDays,
+      TotalHrs: emp.TotalWorkHours,
+      OTHrs: emp.TotalOTHours,
+      TotalPayHrs: emp.TotalHours,
+      TotalPayDay: emp.TotalPresentDays,
+      PerDayHour: SalaryHelper.roundRate(perDayHour),
+      OTPerHrs: SalaryHelper.roundRate(perDayHour),
+      Salary: salary,
+      OTAmount: otAmount,
+      GrossSalary: grossSalary,
+      TotalUpad: totalUpad,
+      LoanInstallment: loanInstallment,
+      TotalBonus: 0,
+      NetSalary: netPayableSalary,
+      BankName: emp.EmpBankName || '-',
+      BankAccountNo: emp.EmpBankACNo || '-',
+      IFSCCode: emp.EmpBankIFSCode || '-',
+      BankAddress: emp.EmpBankAddress || '-',
+      BankPayMode: ''
+    });
+
+    const row = worksheet.getRow(rowIndex);
+    row.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+    
+    row.eachCell((cell, colNumber) => {
+      cell.font = { size: 12 };
+      
+      // Net Salary column is Y (column index 25)
+      if (colNumber === 25 && netPayableSalary < 0) {
+        cell.font = { size: 12, color: { argb: 'FFFF0000' } }; // Red text
+      }
+    });
+  });
+
+  res.setHeader(
+    'Content-Type',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  );
+  res.setHeader(
+    'Content-Disposition',
+    'attachment; filename=' + 'Net_Salary_Report.xlsx'
+  );
+
+  return workbook.xlsx.write(res).then(() => {
+    res.status(200).end();
+  });
+};
+

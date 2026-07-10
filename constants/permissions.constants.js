@@ -50,6 +50,8 @@ const REPORT_FORMS = Object.freeze({
   SALARY_SLIP: "RptSalarySlip",
   SALARY_DETAIL: "RptSalaryDetail",
   SALARY_SUMMARY: "RptSalarySummary",
+  RptSalarySlipGov: "RptSalarySlipGov",
+  RptNetSalaryExcel: "RptNetSalaryExcel",
 
   INVALID_LOGS_REPORT: "RptInvalidLogs",
 
@@ -92,6 +94,16 @@ const SUB_REPORTS = [
   {
     name: "Salary Summary",
     form: REPORT_FORMS.SALARY_SUMMARY,
+    type: REPORT_TYPES.SALARY,
+  },
+  {
+    name: "Government Salary Slip",
+    form: REPORT_FORMS.RptSalarySlipGov,
+    type: REPORT_TYPES.SALARY,
+  },
+  {
+    name: "Net Salary Excel",
+    form: REPORT_FORMS.RptNetSalaryExcel,
     type: REPORT_TYPES.SALARY,
   },
   {

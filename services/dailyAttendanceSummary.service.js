@@ -10,36 +10,44 @@ async function generateAndSaveDailyAttendanceSummary(filters) {
 }
 
 async function saveDailyAttendanceSummary(records) {
-    const CHUNK_SIZE = 50;
-    const chunks = [];
+    if (!records || records.length === 0) return { success: true, savedCount: 0, records: [] };
 
-    // 1. Divide records into chunks smoothly
-    for (let i = 0; i < records.length; i += CHUNK_SIZE) {
-        chunks.push(records.slice(i, i + CHUNK_SIZE));
-    }
+    const empMstIds = new Set();
+    let minDate = records[0].Date;
+    let maxDate = records[0].Date;
 
-    // 2. Process chunks in parallel
-    await Promise.all(chunks.map(async (chunk) => {
-        const t = await db.sequelize.transaction();
+    const mappedRecords = records.map(r => {
+        empMstIds.add(r.EmpMstId);
+        if (r.Date < minDate) minDate = r.Date;
+        if (r.Date > maxDate) maxDate = r.Date;
+        return { ...r, attendanceDate: r.Date };
+    });
 
-        try {
-            for (const r of chunk) {
-                await db.DailyAttendanceSummary.upsert({
-                    ...r,
-                    attendanceDate: r.Date
-                }, {
-                    transaction: t,
-                    conflictFields: ['EmpMstId', 'attendanceDate']
-                });
-            }
-            await t.commit();
-        } catch (error) {
-            await t.rollback();
-            throw error;
+    const t = await db.sequelize.transaction();
+    try {
+        // 1. Wipe old records for these employees in this exact date range
+        await db.DailyAttendanceSummary.destroy({
+            where: {
+                EmpMstId: { [Op.in]: Array.from(empMstIds) },
+                attendanceDate: { [Op.between]: [minDate, maxDate] }
+            },
+            transaction: t
+        });
+
+        // 2. Insert fresh records in safe chunks to avoid MSSQL 2100 parameter limits
+        const CHUNK_SIZE = 50;
+        for (let i = 0; i < mappedRecords.length; i += CHUNK_SIZE) {
+            const chunk = mappedRecords.slice(i, i + CHUNK_SIZE);
+            await db.DailyAttendanceSummary.bulkCreate(chunk, { transaction: t });
         }
-    }));
 
-    return { success: true, savedCount: records.length, records };
+        await t.commit();
+        return { success: true, savedCount: mappedRecords.length, records };
+    } catch (error) {
+        await t.rollback();
+        console.error("BULK SYNC ERROR:", error.name, error.message);
+        throw new AppError("Failed to sync attendance records: " + error.message, 400);
+    }
 }
 
 module.exports = { generateAndSaveDailyAttendanceSummary };

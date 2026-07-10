@@ -19,7 +19,10 @@ class FixedSalaryCalculator {
         }
         context.baseSalary = totalSalary;
 
-        /* --------------------- 2. Select and Execute Strategy --------------------- */
+        /* --------------------- 2. Pre-process Monthly Hours --------------------- */
+        this.aggregateMonthlyHours(context);
+
+        /* --------------------- 3. Select and Execute Strategy --------------------- */
         if (setting.SalaryCalculateOnDay) {
             context.salaryCalculationMethod = 'DAY';
             this.calculateDaySalary(context);
@@ -46,6 +49,32 @@ class FixedSalaryCalculator {
         FinalSalaryManager.calculate(context);
 
         return context;
+    }
+
+    aggregateMonthlyHours(context) {
+        const { attendanceRecords } = context;
+
+        let totalFinalWorkMinutes = 0;
+        let totalFinalOTMinutes = 0;
+        let totalFinalTotalMinutes = 0;
+
+        for (const day of attendanceRecords) {
+            // 1. Get gross total minutes and calculate net OT minutes
+            const finalTotalMinutes = SalaryHelper.parseHHMMToMinutes(day.FinalTotalHours);
+            const netOTMinutes = SalaryHelper.calculateDailyNetOTMinutes(day.OTHours, day.OTGapMinutes);
+
+            // 2. Base work minutes is the remainder after deducting net OT from the final total
+            const finalWorkMinutes = Math.max(0, finalTotalMinutes - netOTMinutes);
+
+            // 3. Accumulate totals
+            totalFinalWorkMinutes += finalWorkMinutes;
+            totalFinalOTMinutes += netOTMinutes;
+            totalFinalTotalMinutes += finalTotalMinutes;
+        }
+
+        context.totalFinalWorkMinutes = totalFinalWorkMinutes;
+        context.totalFinalOTMinutes = totalFinalOTMinutes;
+        context.totalFinalTotalMinutes = totalFinalTotalMinutes;
     }
 
     calculateDaySalary(context) {
@@ -86,6 +115,7 @@ class FixedSalaryCalculator {
         const salaryDivisorDays = SalaryHelper.getSalaryDivisor(setting, month);
         const perDayHours = Number(setting.PerDayHours || 8);
         context.salaryExpectedMinutes = salaryDivisorDays * perDayHours * 60;
+        context.salaryDivisorDays = salaryDivisorDays;
 
         // 2. Aggregate Actual Minutes
         let actualMinutes = 0;

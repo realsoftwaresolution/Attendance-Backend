@@ -32,6 +32,11 @@ class SalaryContext {
         this.totalAbsentDays = 0;
         this.totalNormalPresentDays = 0;
 
+        /* ---------------- Attendance Hours Metrics ---------------- */
+        this.totalFinalWorkMinutes = 0;
+        this.totalFinalOTMinutes = 0;
+        this.totalFinalTotalMinutes = 0;
+
         /* ---------------- Salary Configuration ---------------- */
         this.baseSalary = Number(
             salaryRecord?.TotalSalary || 0

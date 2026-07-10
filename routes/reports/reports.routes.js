@@ -16,6 +16,7 @@ router.get("/invalid-logs",checkReportPermission(REPORT_FORMS.INVALID_LOGS_REPOR
 
 router.get("/salary/detail",checkReportPermission(REPORT_FORMS.SALARY_DETAIL), asyncHandler(ctrl.getDetailedSalaryStatement));
 router.get("/salary/slip",checkReportPermission(REPORT_FORMS.SALARY_SLIP), asyncHandler(ctrl.getSalarySlipReport));
-
+router.get("/salary-slip-gov",checkReportPermission(REPORT_FORMS.RptSalarySlipGov), asyncHandler(ctrl.getSalaryReport));
+router.get("/net-salary-excel",checkReportPermission(REPORT_FORMS.RptNetSalaryExcel), asyncHandler(ctrl.getNetSalaryExcel));
 
 module.exports = router;

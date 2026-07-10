@@ -772,7 +772,7 @@ exports.exportEmployeeMasterData = async (req, res, next) => {
       { header: 'Phone', key: 'EmpPhoneNo', width: 15 },
       { header: 'PAN No', key: 'EmpPANNo', width: 15 },
       { header: 'Aadhar', key: 'AadharCardNo', width: 15 },
-      { header: 'ESI No', key: 'EmpESINo', width: 15 },
+      { header: 'ESI No', key: 'ESINo', width: 15 },
       { header: 'Address', key: 'EmpAddress', width: 50 },
       { header: 'Date of Joining', key: 'DateOfJoining', width: 25 },
       { header: 'Date of Birth', key: 'DateOfBirth', width: 20 },
@@ -792,10 +792,12 @@ exports.exportEmployeeMasterData = async (req, res, next) => {
       { header: 'Bank Name', key: 'EmpBankName', width: 30 },
       { header: 'Bank A/C No', key: 'EmpBankACNo', width: 25 },
       { header: 'IFSC Code', key: 'EmpBankIFSCode', width: 15 },
+      { header: 'Bank Address', key: 'EmpBankAddress', width: 35 },
       { header: 'Salary Type', key: 'SalaryType', width: 15 },
       { header: 'Cash Salary', key: 'CashSalary', width: 15 },
       { header: 'Bank Salary', key: 'BankSalary', width: 15 },
       { header: 'Total Salary', key: 'TotalSalary', width: 15 },
+      { header: 'Date of Resign', key: 'DateOfResign', width: 20 },
       { header: 'Active Status', key: 'Active', width: 15 },
     ];
 
@@ -834,7 +836,7 @@ exports.exportEmployeeMasterData = async (req, res, next) => {
         EmpPhoneNo: emp.EmpPhoneNo || '-',
         EmpPANNo: emp.EmpPANNo || '-',
         AadharCardNo: emp.AadharCardNo || '-',
-        EmpESINo: emp.EmpESINo || '-',
+        ESINo: emp.ESINo || '-',
         EmpAddress: emp.EmpAddress || '-',
         DateOfJoining: emp.DateOfJoining || '-',
         DateOfBirth: emp.DateOfBirth || '-',
@@ -854,10 +856,12 @@ exports.exportEmployeeMasterData = async (req, res, next) => {
         EmpBankName: emp.EmpBankName || '-',
         EmpBankACNo: emp.EmpBankACNo || '-',
         EmpBankIFSCode: emp.EmpBankIFSCode || '-',
+        EmpBankAddress: emp.EmpBankAddress || '-',
         SalaryType: emp.SalaryType || '-',
         CashSalary: emp.CashSalary || 0,
         BankSalary: emp.BankSalary || 0,
         TotalSalary: emp.TotalSalary || 0,
+        DateOfResign: emp.DateOfResign || '-',
         Active: emp.Active ? 'Active' : 'Inactive',
       });
 
@@ -910,6 +914,282 @@ exports.exportEmployeeMasterData = async (req, res, next) => {
 
     await workbook.xlsx.write(res);
     res.end();
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.bulkImportTemplate = async (req, res, next) => {
+  try {
+    const ExcelJS = require("exceljs");
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Employee_Bulk_Import');
+
+    worksheet.columns = [
+      { header: 'EmpCode', key: 'EmpCode', width: 15 },
+      { header: 'EmpFullName', key: 'EmpFullName', width: 25 },
+      { header: 'EmpType', key: 'EmpType', width: 15 },
+      { header: 'Company', key: 'Company', width: 25 },
+      { header: 'Department', key: 'Department', width: 20 },
+      { header: 'Designation', key: 'Designation', width: 20 },
+      { header: 'CashSalary', key: 'CashSalary', width: 15 },
+      { header: 'BankSalary', key: 'BankSalary', width: 15 },
+      { header: 'EffectiveMonth', key: 'EffectiveMonth', width: 15 },
+      { header: 'EmpPhoneNo', key: 'EmpPhoneNo', width: 20 },
+      { header: 'EmpPANNo', key: 'EmpPANNo', width: 20 },
+      { header: 'AadharCardNo', key: 'AadharCardNo', width: 20 },
+      { header: 'EmpAddress', key: 'EmpAddress', width: 30 },
+      { header: 'DateOfJoining', key: 'DateOfJoining', width: 15 },
+      { header: 'DateOfBirth', key: 'DateOfBirth', width: 15 },
+      { header: 'DateOfResign', key: 'DateOfResign', width: 15 },
+      { header: 'EmpGrp', key: 'EmpGrp', width: 15 },
+      { header: 'EmpBankFullName', key: 'EmpBankFullName', width: 20 },
+      { header: 'EmpBankName', key: 'EmpBankName', width: 20 },
+      { header: 'EmpBankACNo', key: 'EmpBankACNo', width: 20 },
+      { header: 'EmpBankIFSCode', key: 'EmpBankIFSCode', width: 20 },
+      { header: 'EmpBankAddress', key: 'EmpBankAddress', width: 25 },
+      { header: 'IsPFApplicable', key: 'IsPFApplicable', width: 15 },
+      { header: 'IsEPSApplicable', key: 'IsEPSApplicable', width: 15 },
+      { header: 'PFEffectiveMonth', key: 'PFEffectiveMonth', width: 15 },
+      { header: 'UANNo', key: 'UANNo', width: 15 },
+      { header: 'PFNo', key: 'PFNo', width: 15 },
+      { header: 'IsESICApplicable', key: 'IsESICApplicable', width: 15 },
+      { header: 'ESICEffectiveMonth', key: 'ESICEffectiveMonth', width: 15 },
+      { header: 'ESINo', key: 'ESINo', width: 15 },
+      { header: 'IsPTApplicable', key: 'IsPTApplicable', width: 15 },
+      { header: 'PTEffectiveMonth', key: 'PTEffectiveMonth', width: 15 },
+      { header: 'PTRemarks', key: 'PTRemarks', width: 15 },
+      { header: 'SortId', key: 'SortId', width: 10 }
+    ];
+
+    worksheet.getRow(1).eachCell((cell) => {
+      cell.font = { bold: true };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+    });
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=Employee_Bulk_Import_Template.xlsx');
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.bulkImportEmployees = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      throw new AppError("No Excel file uploaded.", 400);
+    }
+
+    const { employeeRegistrationSchema } = require("../../validations/master/employee.validation");
+    const ExcelJS = require("exceljs");
+    const moment = require("moment");
+
+    // 1. Fetch Masters efficiently (Once)
+    const companyRecords = await db.CompanyMst.findAll({ attributes: ['CompanyMstId', 'CompanyName'] });
+    const deptRecords = await db.DepartmentMst.findAll({ attributes: ['DepartmentMstId', 'Department'] });
+    const desigRecords = await db.DesignationMst.findAll({ attributes: ['DesignationMstId', 'Designation'] });
+    // Build Case-Insensitive Maps
+    const toMap = (records, nameKey, idKey) => {
+      const map = new Map();
+      records.forEach(r => {
+        if (r[nameKey]) map.set(String(r[nameKey]).trim().toLowerCase(), r[idKey]);
+      });
+      return map;
+    };
+
+    const companyMap = toMap(companyRecords, 'CompanyName', 'CompanyMstId');
+    const deptMap = toMap(deptRecords, 'Department', 'DepartmentMstId');
+    const desigMap = toMap(desigRecords, 'Designation', 'DesignationMstId');
+
+    // 2. Parse Excel
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(req.file.buffer);
+    const worksheet = workbook.worksheets[0];
+
+    const errors = [];
+    const validPayloads = [];
+
+    // Dynamically map headers from Row 1 to be highly robust against casing and spaces
+    const headerMap = {};
+    worksheet.getRow(1).eachCell((cell, colNumber) => {
+      if (cell.value) {
+        const headerName = String(cell.value).toLowerCase().replace(/\s+/g, '');
+        headerMap[headerName] = colNumber;
+      }
+    });
+
+    const getVal = (row, colName) => {
+      const cleanColName = String(colName).toLowerCase().replace(/\s+/g, '');
+      const colIdx = headerMap[cleanColName];
+      if (!colIdx) return null;
+
+      let val = row.getCell(colIdx).value;
+      
+      // Handle rich text or formula cells
+      if (val && typeof val === 'object') {
+        if (val.richText) val = val.richText.map(rt => rt.text).join('');
+        else if (val.result !== undefined) val = val.result;
+        else if (val instanceof Date) {
+          // If the column asks for EffectiveMonth, format YYYY-MM, else YYYY-MM-DD
+          if (cleanColName.includes('effectivemonth')) {
+            val = moment(val).format('YYYY-MM');
+          } else {
+            val = moment(val).format('YYYY-MM-DD');
+          }
+        }
+      }
+
+      let finalVal = val !== null && val !== undefined ? String(val).trim() : null;
+
+      // Force strictly slice strings that are accidentally ISO dates (e.g., "1990-05-20T00:00...")
+      if (finalVal && cleanColName.includes('date')) {
+         finalVal = finalVal.substring(0, 10);
+      }
+      if (finalVal && cleanColName.includes('effectivemonth')) {
+         finalVal = finalVal.substring(0, 7);
+      }
+
+      return finalVal;
+    };
+
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return; // Skip header
+
+      const rowErrors = [];
+      const rawCompany = getVal(row, 'Company');
+      const rawDept = getVal(row, 'Department');
+      const rawDesig = getVal(row, 'Designation');
+
+      const companyId = rawCompany ? companyMap.get(rawCompany.toLowerCase()) : null;
+      const deptId = rawDept ? deptMap.get(rawDept.toLowerCase()) : null;
+      const desigId = rawDesig ? desigMap.get(rawDesig.toLowerCase()) : null;
+
+      if (rawCompany && !companyId) rowErrors.push(`Company '${rawCompany}' not found in database.`);
+      if (rawDept && !deptId) rowErrors.push(`Department '${rawDept}' not found in database.`);
+      if (rawDesig && !desigId) rowErrors.push(`Designation '${rawDesig}' not found in database.`);
+
+      // Format booleans
+      const toBool = (val) => val && String(val).toLowerCase() === 'yes';
+
+      const payload = {
+        EmpCode: getVal(row, 'EmpCode'),
+        EmpFullName: getVal(row, 'EmpFullName'),
+        EmpType: getVal(row, 'EmpType'),
+        CompanyMstId: companyId,
+        BranchMstId: 1,
+        DepartmentMstId: deptId,
+        DesignationMstId: desigId,
+        CashSalary: getVal(row, 'CashSalary'),
+        BankSalary: getVal(row, 'BankSalary'),
+        SalaryType: 'None',
+        EffectiveMonth: getVal(row, 'EffectiveMonth'),
+        EmpPhoneNo: getVal(row, 'EmpPhoneNo'),
+        EmpPANNo: getVal(row, 'EmpPANNo'),
+        AadharCardNo: getVal(row, 'AadharCardNo'),
+        EmpAddress: getVal(row, 'EmpAddress'),
+        DateOfJoining: getVal(row, 'DateOfJoining'),
+        DateOfBirth: getVal(row, 'DateOfBirth'),
+        DateOfResign: getVal(row, 'DateOfResign'),
+        EmpGrp: getVal(row, 'EmpGrp'),
+        EmpBankFullName: getVal(row, 'EmpBankFullName'),
+        EmpBankName: getVal(row, 'EmpBankName'),
+        EmpBankACNo: getVal(row, 'EmpBankACNo'),
+        EmpBankIFSCode: getVal(row, 'EmpBankIFSCode'),
+        EmpBankAddress: getVal(row, 'EmpBankAddress'),
+        IsPFApplicable: toBool(getVal(row, 'IsPFApplicable')),
+        IsEPSApplicable: toBool(getVal(row, 'IsEPSApplicable')),
+        PFEffectiveMonth: getVal(row, 'PFEffectiveMonth'),
+        UANNo: getVal(row, 'UANNo'),
+        PFNo: getVal(row, 'PFNo'),
+        IsESICApplicable: toBool(getVal(row, 'IsESICApplicable')),
+        ESICEffectiveMonth: getVal(row, 'ESICEffectiveMonth'),
+        ESINo: getVal(row, 'ESINo'),
+        IsPTApplicable: toBool(getVal(row, 'IsPTApplicable')),
+        PTEffectiveMonth: getVal(row, 'PTEffectiveMonth'),
+        PTRemarks: getVal(row, 'PTRemarks'),
+        SortId: getVal(row, 'SortId') || 1
+      };
+
+      // Strip out null values for optional Joi validation
+      Object.keys(payload).forEach(key => {
+          if (payload[key] === null || payload[key] === '') {
+              delete payload[key];
+          }
+      });
+
+      // Joi Validation
+      const { error, value } = employeeRegistrationSchema.validate(payload, { abortEarly: false });
+      
+      if (error) {
+        rowErrors.push(...error.details.map(err => err.message));
+      }
+
+      if (rowErrors.length > 0) {
+        errors.push({ row: rowNumber, issues: rowErrors });
+      } else {
+        validPayloads.push(value);
+      }
+    });
+
+    if (errors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Bulk import failed due to validation or mapping errors.",
+        errors: errors
+      });
+    }
+
+    // 3. Execution (All-or-nothing Transaction)
+    const transaction = await db.sequelize.transaction();
+    
+    try {
+      for (const empData of validPayloads) {
+        // Pre-check EmpCode
+        const existingCode = await db.EmployeeMst.findOne({ where: { EmpCode: empData.EmpCode }, transaction });
+        if (existingCode) {
+          throw new AppError(`Employee Code '${empData.EmpCode}' already exists in database.`, 409);
+        }
+
+        const employee = await db.EmployeeMst.create({
+          ...empData,
+          Sflag: "I",
+          LogID: req.logId,
+          PcID: req.pcId,
+          SortId: empData.SortId || 1,
+          Active: true
+        }, { transaction });
+
+        const totalSalary = Number(empData.CashSalary || 0) + Number(empData.BankSalary || 0);
+
+        await db.EmployeeSalaryHistory.create({
+          EmpMstId: employee.EmpMstId,
+          EffectiveMonth: empData.EffectiveMonth,
+          CashSalary: empData.CashSalary,
+          BankSalary: empData.BankSalary,
+          TotalSalary: totalSalary,
+          SalaryType: empData.SalaryType,
+          EmpBankFullName: empData.EmpBankFullName,
+          EmpBankName: empData.EmpBankName,
+          EmpBankACNo: empData.EmpBankACNo,
+          EmpBankIFSCode: empData.EmpBankIFSCode,
+          Active: true
+        }, { transaction });
+      }
+
+      await transaction.commit();
+
+      return res.status(200).json({
+        success: true,
+        message: `${validPayloads.length} employees imported successfully.`
+      });
+    } catch (execError) {
+      await transaction.rollback();
+      throw execError;
+    }
 
   } catch (error) {
     next(error);

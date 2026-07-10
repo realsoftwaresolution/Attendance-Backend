@@ -1,6 +1,7 @@
 const { Op } = require('sequelize');
 const db = require('../config/dbConnection');
 const SalaryCalculator = require('../classes/SalaryCalculator');
+const SalaryHelper = require('../classes/SalaryHelper');
 const moment = require('moment');
 const { generateAndSaveDailyAttendanceSummary } = require('./dailyAttendanceSummary.service');
 
@@ -137,6 +138,10 @@ async function calculateDepartmentSalary({ month, departmentId }) {
                 TotalNormalPresentDays: context.totalNormalPresentDays,
                 TotalHalfDays: context.totalHalfDays,
                 TotalAbsentDays: context.totalAbsentDays,
+                /* ---------------- Monthly Hours Summary ---------------- */
+                TotalWorkHours: SalaryHelper.minutesToHHMM(context.totalFinalWorkMinutes),
+                TotalOTHours: SalaryHelper.minutesToHHMM(context.totalFinalOTMinutes),
+                TotalHours: SalaryHelper.minutesToHHMM(context.totalFinalTotalMinutes),
                 /* ---------------- Holiday / Sunday Audit ---------------- */
                 PaidHolidayCount: context.paidHolidayCount,
                 UnpaidHolidayCount: context.unpaidHolidayCount,
