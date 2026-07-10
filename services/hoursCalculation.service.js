@@ -158,23 +158,11 @@ async function generateDailyAttendanceData({
         // are correctly assigned to TODAY instead of being pushed to yesterday.
         const dayBreakCutoffToday = moment(baseStartToday).subtract(4, "hours");
 
-        // EVALUATE 'IN' PUNCHES
-        if (punch.punchType?.toUpperCase() === "IN") {
-          // If arrival lands before the morning fence line, it belongs to yesterday's late shift assignment
-          if (pTime.isBefore(dayBreakCutoffToday)) {
-            assignedBusinessDate = moment(calendarDateStr).subtract(1, "day").format("YYYY-MM-DD");
-          }
-        }
-        
-        // EVALUATE 'OUT' PUNCHES
-        if (punch.punchType?.toUpperCase() === "OUT") {
-          const prevDayStr = moment(calendarDateStr).subtract(1, "day").format("YYYY-MM-DD");
-          const prevDayRecord = businessDateRecords[prevDayStr];
-          
-          // ODD/EVEN RULE: If yesterday has an open, unmatched IN punch, this morning OUT belongs to yesterday.
-          if (prevDayRecord && prevDayRecord._punches.length % 2 !== 0) {
-            assignedBusinessDate = prevDayStr;
-          }
+        // EVALUATE ALL PUNCHES (IN & OUT)
+        // If any punch lands before the morning fence line, it naturally belongs to yesterday's shift!
+        // This elegantly handles night shifts (e.g., OUT at 6 AM) without grabbing a next-day 7 PM OUT punch.
+        if (pTime.isBefore(dayBreakCutoffToday)) {
+          assignedBusinessDate = moment(calendarDateStr).subtract(1, "day").format("YYYY-MM-DD");
         }
       }
 
