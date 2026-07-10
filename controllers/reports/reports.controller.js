@@ -2,6 +2,12 @@ const { QueryTypes, Op } = require("sequelize");
 const db = require("../../config/dbConnection");
 const SalaryHelper = require("../../classes/SalaryHelper");
 const ExcelJS = require("exceljs");
+const moment = require("moment");
+
+const getResignationFilterSQL = () => {
+    return ` AND (E.DateOfResign IS NULL OR E.DateOfResign = '' OR CAST(:TargetReportEndDate AS DATE) <= DATEADD(day, 30, CAST(E.DateOfResign AS DATE)))`;
+};
+
 
 const getReportDates = (FromDate, ToDate) => {
   let fromDate = FromDate;
@@ -50,6 +56,8 @@ const buildReportQuery = (req, fromDate, toDate) => {
   applyInFilter(DesignationMstId, "E.DesignationMstId", "DesignationMstId");
 
   whereClause += ` AND CAST(P.punchTime AS DATE) BETWEEN :FromDate AND :ToDate`;
+  whereClause += getResignationFilterSQL();
+  replacements.TargetReportEndDate = toDate;
 
   const query = `
     SELECT
