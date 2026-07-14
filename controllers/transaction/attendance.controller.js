@@ -323,6 +323,16 @@ exports.addFacePunch = async (req, res) => {
 
   const newPunchTime = punchDate;
 
+  if (nextPunchType === "OUT" && existingPunches.length > 0) {
+    const lastPunch = existingPunches[existingPunches.length - 1];
+    const diffMs = newPunchTime.getTime() - new Date(lastPunch.punchTime).getTime();
+    const diffMinutes = diffMs / (1000 * 60);
+
+    if (diffMinutes < 60) {
+      throw new Error(`Minimum 1 hour gap required before punching OUT. Please try again after ${Math.ceil(60 - diffMinutes)} minutes.`);
+    }
+  }
+
   /* ---------------- INSERT PUNCH LOG ---------------- */
   const newPunch = await db.PunchLogs.create(
     {
