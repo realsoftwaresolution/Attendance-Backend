@@ -52,6 +52,7 @@ exports.login = async (req, res) => {
         UserMstId: user.UserMstId,
         Username: user.Username,
         UserType: user.UserType,
+        EmpMstId: user.EmpMstId,
         access
     };
 
@@ -74,7 +75,8 @@ exports.login = async (req, res) => {
         user: {
             UserMstId: user.UserMstId,
             Username: user.Username,
-            UserType: user.UserType
+            UserType: user.UserType,
+            EmpMstId: user.EmpMstId
         },
         permissions,
         reports,
@@ -95,6 +97,7 @@ exports.createUser = async (req, res) => {
         Username,
         Password,
         UserGrp,
+        CompanyMstId,
         navigation = [],
         reports = []
     } = req.body;
@@ -113,6 +116,7 @@ exports.createUser = async (req, res) => {
         Password: await hashPassword(Password),
         UserType: 'user',
         UserGrp,
+        CompanyMstId: CompanyMstId || null,
         Active: true,
         IsDelete: false
     }, { transaction });
@@ -426,7 +430,11 @@ exports.getUsers = async (req, res) => {
             'updatedAt'
         ],
         where: {
-            IsDelete: false
+            IsDelete: false,
+            [Op.or]: [
+                { UserType: { [Op.ne]: 'Employee' } },
+                { UserType: null }
+            ]
         },
         order: [['UserMstId', 'DESC']]
     });

@@ -10,6 +10,7 @@ const {
 } = require("../../utils/fileCleanup");
 const { saveValidatedBuffersToDisk } = require("../../utils/uploadEngine");
 const { getEmbeddingFromImagePath } = require("../../utils/face.utils");
+const { hashPassword } = require("../../utils/hash.utils");
 const moment = require("moment");
 
 exports.createEmployee = async (req, res, next) => {
@@ -21,6 +22,8 @@ exports.createEmployee = async (req, res, next) => {
     SalaryType,
     EffectiveMonth,
     DateOfJoining,
+    Username,
+    Password,
   } = req.body;
 
   if (!EmpCode) throw new AppError("Employee Code (EmpCode) is required.", 400);
@@ -32,6 +35,14 @@ exports.createEmployee = async (req, res, next) => {
 
   if (existingEmployee) {
     throw new AppError(`Employee with Code '${EmpCode}' already exists.`, 409);
+  }
+
+  // Username Uniqueness Check for UserMst
+  if (Username) {
+    const existingUser = await db.UserMst.findOne({ where: { Username }, transaction });
+    if (existingUser) {
+        throw new AppError(`Username '${Username}' is already taken.`, 409);
+    }
   }
 
   // Process files
@@ -94,7 +105,23 @@ exports.createEmployee = async (req, res, next) => {
   const data = employee.toJSON();
   data.CurrentSalary = activeSalary;
 
-
+  // Create UserMst Entry
+  if (Username && Password) {
+      const hashedPassword = await hashPassword(Password);
+      
+      await db.UserMst.create({
+          Username,
+          Password: hashedPassword,
+          UserType: 'Employee',
+          UserGrp: 'Employee',
+          Sflag: 'I',
+          SortId: 1,
+          IsDelete: false,
+          CompanyMstId: req.body.CompanyMstId || null,
+          EmpMstId: employee.EmpMstId,
+          Active: true
+      }, { transaction });
+  }
 
   return res.status(201).json({
     success: true,
@@ -107,7 +134,7 @@ exports.updateEmployee = async (req, res, next) => {
   const employeeId = req.params.id;
   const { transaction, logId, pcId } = req;
 
-  const { EmpCode, CashSalary, BankSalary, SalaryType, EffectiveMonth } =
+  const { EmpCode, CashSalary, BankSalary, SalaryType, EffectiveMonth, Username, Password } =
     req.body;
 
   const employee = await db.EmployeeMst.findOne({
@@ -128,6 +155,17 @@ exports.updateEmployee = async (req, res, next) => {
 
     if (duplicate) {
       throw new AppError(`The EmpCode '${EmpCode}' is already assigned.`, 409);
+    }
+  }
+
+  // Prevent duplicate Username for UserMst
+  if (Username) {
+    const duplicateUser = await db.UserMst.findOne({
+      where: { Username },
+      transaction,
+    });
+    if (duplicateUser && String(duplicateUser.EmpMstId) !== String(employeeId)) {
+      throw new AppError(`Username '${Username}' is already taken.`, 409);
     }
   }
 
@@ -287,7 +325,43 @@ exports.updateEmployee = async (req, res, next) => {
   const data = employee.toJSON();
   data.CurrentSalary = currentActiveSalary;
 
+  // Sync UserMst Entry
+  if (Username !== undefined || req.body.CompanyMstId !== undefined) { 
+      const existingUser = await db.UserMst.findOne({ where: { EmpMstId: employeeId }, transaction });
+      
+      // If they explicitly cleared out the Username, destroy the user account
+      if (existingUser && (Username === "" || Username === null)) {
+          await existingUser.destroy({ transaction });
+      } else {
+          let updatePayload = { Sflag: 'U' };
+          if (req.body.CompanyMstId !== undefined) {
+              updatePayload.CompanyMstId = req.body.CompanyMstId;
+          }
+          
+          if (Username !== undefined && Username !== "") updatePayload.Username = Username;
 
+          if (Password && Password.trim() !== "") {
+              updatePayload.Password = await hashPassword(Password);
+          }
+
+          if (existingUser) {
+              await existingUser.update(updatePayload, { transaction });
+          } else if (Username && Password) {
+              await db.UserMst.create({
+                  Username,
+                  Password: await hashPassword(Password),
+                  UserType: 'Employee',
+                  UserGrp: 'Employee',
+                  Sflag: 'I',
+                  SortId: 1,
+                  IsDelete: false,
+                  CompanyMstId: req.body.CompanyMstId !== undefined ? req.body.CompanyMstId : employee.CompanyMstId,
+                  EmpMstId: employeeId,
+                  Active: true
+              }, { transaction });
+          }
+      }
+  }
 
   return res.status(200).json({
     success: true,
@@ -365,6 +439,7 @@ exports.getAllEmployees = async (req, res, next) => {
       `
             SELECT
                 e.*,
+                um.Username,
                 e.BranchMstId AS EmpBranch,
                 sh.CashSalary,
                 sh.BankSalary,
@@ -376,6 +451,7 @@ exports.getAllEmployees = async (req, res, next) => {
                 c.CompanyName AS EmpCompanyName,
                 c.Address AS EmpCompanyAddress
             FROM EmployeeMst e
+            LEFT JOIN UserMst um ON e.EmpMstId = um.EmpMstId
             LEFT JOIN (
                 SELECT *, 
                        ROW_NUMBER() OVER (PARTITION BY EmpMstId ORDER BY createdAt DESC) as rn
@@ -453,6 +529,12 @@ exports.deleteEmployee = async (req, res, next) => {
     where: { EmpMstId: employeeId },
     transaction,
   });
+  
+  await db.UserMst.destroy({
+    where: { EmpMstId: employeeId },
+    transaction,
+  });
+
   await employee.destroy({ transaction });
 
   // 2. Clean up files on disk post-database success
@@ -659,6 +741,7 @@ exports.getEmployeeBasicInfo = async (req, res, next) => {
             e.EmpMstId,
             e.EmpFullName,
             e.AadharCardNo,
+            um.Username,
             dg.DesignationMstId,
             dg.Designation,
             c.CompanyMstId,
@@ -670,6 +753,7 @@ exports.getEmployeeBasicInfo = async (req, res, next) => {
             sh.TotalSalary,
             sd.NetPayableSalary As NetSalary
         FROM EmployeeMst e
+        LEFT JOIN UserMst um ON e.EmpMstId = um.EmpMstId
         LEFT JOIN (
             SELECT *, 
                    ROW_NUMBER() OVER (PARTITION BY EmpMstId ORDER BY createdAt DESC) as rn

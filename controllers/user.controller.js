@@ -5,7 +5,7 @@ const { hashPassword } = require("../utils/hash.utils");
 
 exports.editUser = async (req, res) => {
     const { id } = req.params;
-    const { Username, Password, UserType, UserGrp, CompanyCode, Edit, Delete } = req.body;
+    const { Username, Password, UserType, UserGrp, CompanyMstId, Edit, Delete } = req.body;
 
     // 1. Find the existing user
     const user = await db.UserMst.findByPk(id);
@@ -31,7 +31,7 @@ exports.editUser = async (req, res) => {
         Username,
         UserType,
         UserGrp,
-        CompanyCode: CompanyCode || null,
+        CompanyMstId: CompanyMstId || null,
         Edit_Rights: Edit,
         Delete_Rights: Delete,
     };

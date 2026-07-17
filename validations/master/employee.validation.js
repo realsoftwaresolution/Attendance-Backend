@@ -2,6 +2,9 @@ const Joi = require('joi');
 
 const employeeRegistrationSchema = Joi.object({
     /* --------------------------- Employee Details --------------------------- */
+    
+    Username: Joi.string().max(30).optional().allow(''),
+    Password: Joi.string().optional().allow(''),
 
     EmpCode: Joi.number()
         .integer()

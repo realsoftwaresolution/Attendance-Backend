@@ -13,6 +13,8 @@ function userMstModel(sequelize) {
         SortId: { type: DataTypes.INTEGER, allowNull: true },
         Active: { type: DataTypes.BOOLEAN, allowNull: true },
         IsDelete: { type: DataTypes.BOOLEAN, allowNull: true },
+        EmpMstId: { type: DataTypes.INTEGER, allowNull: true },
+        CompanyMstId: { type: DataTypes.INTEGER, allowNull: true },
         Token: {
             type: DataTypes.STRING(4000),
             allowNull: true

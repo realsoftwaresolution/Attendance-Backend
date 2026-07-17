@@ -27,6 +27,9 @@ router.use("/master-settings", require('./utility/masterSetting.routes'));
 /* ----------------------------- reports routes ----------------------------- */
 router.use("/reports", require('./reports/reports.routes'));
 
+/* --------------------------- dashboard routes --------------------------- */
+router.use("/dashboard", require('./dashboard.routes'));
+
 
 
 module.exports = router;
