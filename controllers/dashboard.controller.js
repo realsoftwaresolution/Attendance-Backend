@@ -169,3 +169,92 @@ exports.getMonthlyTrends = async (req, res, next) => {
         next(error);
     }
 };
+
+
+// --- Helper Functions ---
+const timeToMins = (t) => {
+    if (!t) return 0;
+    const parts = t.split(':');
+    if (parts.length !== 2) return 0;
+    return (parseInt(parts[0], 10) * 60) + parseInt(parts[1], 10);
+};
+
+const minsToTime = (m) => {
+    const isNegative = m < 0;
+    m = Math.abs(m);
+    const hrs = Math.floor(m / 60).toString().padStart(2, '0');
+    const mins = (m % 60).toString().padStart(2, '0');
+    return `${isNegative ? '-' : ''}${hrs}:${mins}`;
+};
+
+exports.getEmployeeDashboard = async (req, res, next) => {
+    try {
+        if (req.user.UserType !== 'Employee') {
+            return res.status(403).json({ success: false, message: "Access denied. Only Employees can access this dashboard." });
+        }
+
+        const empMstId = req.user.EmpMstId;
+        const monthFilter = req.query.Month || moment().format("YYYY-MM"); 
+
+        const startOfMonth = moment(monthFilter, "YYYY-MM").startOf("month").format("YYYY-MM-DD");
+        const endOfMonth = moment(monthFilter, "YYYY-MM").endOf("month").format("YYYY-MM-DD");
+
+        // 1. Fetch Daily Summary Data for the given month
+        const summaryRecords = await db.DailyAttendanceSummary.findAll({
+            where: {
+                EmpMstId: empMstId,
+                attendanceDate: {
+                    [Op.between]: [startOfMonth, endOfMonth]
+                }
+            }
+        });
+
+        let totalWorkedMins = 0;
+        let totalOvertimeMins = 0;
+        let daysPresentCount = 0;
+
+        summaryRecords.forEach(record => {
+            // Worked Hours: FinalTotalHours - OTHours + OTGapMinutes
+            const finalMins = timeToMins(record.FinalTotalHours);
+            const otMins = timeToMins(record.OTHours);
+            const otGapMins = timeToMins(record.OTGapMinutes);
+
+            totalWorkedMins += (finalMins - otMins + otGapMins);
+
+            // Overtime Hours: OTHours - OTGapMinutes (with floor of 0)
+            const calculatedOtMins = Math.max(0, otMins - otGapMins);
+            totalOvertimeMins += calculatedOtMins;
+
+            // Day Present Count: exclude Absent and Invalid Logs
+            if (record.Status && record.Status !== "Absent" && record.Status !== "Invalid Logs" && record.Status !== "Invalid Log") {
+                daysPresentCount++;
+            }
+        });
+
+        // 2. Fetch Net Salary
+        let netSalary = 0;
+        const salaryRecord = await db.SalaryDet.findOne({
+            where: {
+                EmpMstId: empMstId,
+                SalaryMonth: monthFilter
+            }
+        });
+
+        if (salaryRecord) {
+            netSalary = parseFloat(salaryRecord.NetPayableSalary) || 0;
+        }
+
+        res.status(200).json({
+            success: true,
+            data: {
+                Month: monthFilter,
+                WorkedHours: minsToTime(totalWorkedMins),
+                OvertimeHours: minsToTime(totalOvertimeMins),
+                DaysPresent: daysPresentCount,
+                NetSalary: netSalary
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+};

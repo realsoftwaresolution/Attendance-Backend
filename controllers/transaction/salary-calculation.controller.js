@@ -550,3 +550,44 @@ exports.getSalaryDetails = async (req, res, next) => {
         data: rows
     });
 };
+
+exports.getEmployeeSalaryDetails = async (req, res, next) => {
+    try {
+        if (req.user.UserType !== 'Employee') {
+            return res.status(403).json({ success: false, message: "Access denied. Only Employees can access this API." });
+        }
+
+        const empMstId = req.user.EmpMstId;
+        const monthFilter = req.query.SalaryMonth || moment().format("YYYY-MM"); 
+
+        if (!empMstId) {
+            return res.status(400).json({ success: false, message: "Employee ID not found in token." });
+        }
+
+        const data = await db.SalaryDet.findOne({
+            where: {
+                EmpMstId: empMstId,
+                SalaryMonth: monthFilter,
+                Active: true
+            }
+        });
+
+        if (!data) {
+            return res.status(404).json({
+                success: false,
+                message: "No salary records found for the given month."
+            });
+        }
+
+        const item = data.toJSON();
+        item.TaxMessages = item.TaxMessages ? JSON.parse(item.TaxMessages) : [];
+
+        return res.status(200).json({
+            success: true,
+            data: item
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};

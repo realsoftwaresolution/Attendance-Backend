@@ -16,6 +16,7 @@ const FORMS = Object.freeze({
   ADVANCED_ENTRY: "FrmAdvancedEntry",
   COUNTER: "FrmCounter",
   LOAN:"FrmLoanEntry",
+  LEAVE: "FrmLeave",
 
   PF_MASTER: "FrmPFMst",
   PT_MASTER: "FrmPTMst",

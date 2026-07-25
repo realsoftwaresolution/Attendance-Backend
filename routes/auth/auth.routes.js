@@ -9,6 +9,7 @@ const { FORMS } = require('../../constants/permissions.constants');
 
 router.post("/login", asyncHandler(controller.login));
 router.use(verifyToken);
+router.post("/change-password", asyncTransactionHandler(controller.changePassword));
 router.get("/users",checkPermission(FORMS.COUNTER, "view"), asyncTransactionHandler(controller.getUsers));
 router.post("/users",checkPermission(FORMS.COUNTER, "create"), asyncTransactionHandler(controller.createUser));
 router.get("/system-metadata",checkPermission(FORMS.COUNTER, "view"), asyncHandler(controller.getSystemMetadata));

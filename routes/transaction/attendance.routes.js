@@ -20,6 +20,7 @@ const punchUploadSchema = [
 
 
 router.use(verifyToken);
+router.get("/employee-punches", asyncHandler(ctrl.getEmployeePunchLogs));
 router.get("/", checkPermission(FORMS.ATTENDANCE, 'view'), asyncHandler(ctrl.getPunchLogs));
 router.put("/", checkPermission(FORMS.ATTENDANCE, 'edit'), asyncTransactionHandler(ctrl.updatePunchDay));
 router.post("/face-punch", asyncTransactionHandler(ctrl.addFacePunch));

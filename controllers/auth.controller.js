@@ -90,6 +90,31 @@ exports.login = async (req, res) => {
     });
 };
 
+exports.changePassword = async (req, res) => {
+    const transaction = req.transaction;
+    const { NewPassword } = req.body;
+    
+    if (!NewPassword) throw new AppError("NewPassword is required", 400);
+
+    const userId = req.user.UserMstId; 
+
+    // Retrieve user including token so we can update it
+    const user = await db.UserMst.scope("withAll").findOne({ where: { UserMstId: userId, IsDelete: false }, transaction });
+    if (!user) throw new AppError("User not found", 404);
+
+    const hashedPassword = await hashPassword(NewPassword);
+
+    await user.update({
+        Password: hashedPassword,
+        Token: null
+    }, { transaction });
+
+    res.status(200).json({
+        success: true,
+        message: "Password changed successfully. Please login again."
+    });
+};
+
 exports.createUser = async (req, res) => {
     const transaction = req.transaction;
 

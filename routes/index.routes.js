@@ -14,6 +14,7 @@ router.use("/pt", require('./master/pt.routes'));
 router.use("/esic", require('./master/esic.routes'));
 router.use("/advanced-entry", require('./master/advanced-entry.routes'));
 router.use("/loan", require('./master/loan.routes'));
+router.use("/leave", require('./master/leave.routes'));
 
 /* --------------------------- transaction routes --------------------------- */
 router.use("/shift-entry", require('./transaction/shift-entry.routes'));

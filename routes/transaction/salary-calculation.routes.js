@@ -14,5 +14,6 @@ router.post('/save', checkPermission(FORMS.SALARY_CALCULATION, 'create'), valida
 router.get('/details/:salaryMstId',checkPermission(FORMS.SALARY_CALCULATION, 'view'),asyncHandler(ctrl.getSalaryDetails));
 router.delete('/:salaryMstId', checkPermission(FORMS.SALARY_CALCULATION, 'delete'), asyncTransactionHandler(ctrl.deleteSalary));
 router.get('/saved-list', checkPermission(FORMS.SALARY_CALCULATION, 'view'), asyncHandler(ctrl.getSavedSalaryList));
+router.get('/employee-salary', asyncHandler(ctrl.getEmployeeSalaryDetails));
 
 module.exports = router;

@@ -10,5 +10,6 @@ router.use(verifyToken);
 /* ------------------ GET ENDPOINTS ------------------ */
 router.get("/daily-metrics", asyncHandler(dashboardController.getDailyMetrics));
 router.get("/monthly-trends", asyncHandler(dashboardController.getMonthlyTrends));
+router.get("/employee", asyncHandler(dashboardController.getEmployeeDashboard));
 
 module.exports = router;

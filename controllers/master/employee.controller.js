@@ -370,6 +370,67 @@ exports.updateEmployee = async (req, res, next) => {
   });
 };
 
+exports.getEmployeeProfile = async (req, res, next) => {
+    try {
+        const empMstId = req.user.EmpMstId;
+        
+        if (!empMstId) {
+            throw new AppError("Employee ID not found in token", 400);
+        }
+
+        const rows = await db.sequelize.query(
+            `
+            SELECT
+                e.*,
+                um.Username,
+                e.BranchMstId AS EmpBranch,
+                sh.CashSalary,
+                sh.BankSalary,
+                sh.TotalSalary,
+                sh.SalaryType,
+                sh.EffectiveMonth,
+                d.Department AS EmpDepartment,
+                dg.Designation AS EmpDesignation,
+                c.CompanyName AS EmpCompanyName,
+                c.Address AS EmpCompanyAddress
+            FROM EmployeeMst e
+            LEFT JOIN UserMst um ON e.EmpMstId = um.EmpMstId
+            LEFT JOIN (
+                SELECT *, 
+                       ROW_NUMBER() OVER (PARTITION BY EmpMstId ORDER BY createdAt DESC) as rn
+                FROM EmployeeSalaryHistory 
+                WHERE Active = 1
+            ) sh ON e.EmpMstId = sh.EmpMstId AND sh.rn = 1
+            LEFT JOIN DepartmentMst d ON e.DepartmentMstId = d.DepartmentMstId
+            LEFT JOIN DesignationMst dg ON e.DesignationMstId = dg.DesignationMstId
+            LEFT JOIN CompanyMst c ON e.CompanyMstId = c.CompanyMstId
+            WHERE e.EmpMstId = :empMstId
+            `,
+            {
+                replacements: { empMstId },
+                type: QueryTypes.SELECT,
+            }
+        );
+
+        if (!rows || rows.length === 0) {
+            throw new AppError("Employee profile not found", 404);
+        }
+
+        const profileData = rows[0];
+
+        // Remove sensitive biometric data before sending to frontend
+        delete profileData.BiometricImagePath;
+        delete profileData.BiometricVector;
+
+        res.status(200).json({
+            success: true,
+            data: profileData,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 exports.getAllEmployees = async (req, res, next) => {
   try {
     // 1. Check for Pagination Flag (Defaults to true)

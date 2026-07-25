@@ -14,6 +14,112 @@ const {
   getEmbeddingFromBuffer,
 } = require("../../utils/face.utils");
 const fs = require("fs");
+const moment = require("moment");
+
+exports.getEmployeePunchLogs = async (req, res, next) => {
+    try {
+        if (req.user.UserType !== 'Employee') {
+            return res.status(403).json({ success: false, message: "Access denied. Only Employees can access this API." });
+        }
+
+        const empMstId = req.user.EmpMstId;
+        const monthFilter = req.query.Month || moment().format("YYYY-MM"); 
+        const limit = req.query.limit ? parseInt(req.query.limit, 10) : null;
+
+        const startOfMonth = moment(monthFilter, "YYYY-MM").startOf("month").format("YYYY-MM-DD");
+        const endOfMonth = moment(monthFilter, "YYYY-MM").endOf("month").format("YYYY-MM-DD");
+
+        const replacements = {
+            FromDate: startOfMonth,
+            ToDate: endOfMonth,
+            EmpMstId: empMstId
+        };
+
+        const rawData = await db.sequelize.query(
+            `
+            SELECT
+                P.id,
+                P.EmpCode,
+                P.SyncTrackerId,
+                E.EmpMstId,
+                E.EmpFullName,
+                D.Department,
+                DG.Designation,
+                CAST(P.punchTime AS DATE) AS AttendanceDate,
+                CONVERT(VARCHAR(8), P.punchTime, 108) AS PunchTime,
+                P.punchType,
+                P.punchSource
+            FROM PunchLogs P
+            INNER JOIN EmployeeMst E ON P.EmpCode = E.EmpCode
+            LEFT JOIN DepartmentMst D ON E.DepartmentMstId = D.DepartmentMstId
+            LEFT JOIN DesignationMst DG ON E.DesignationMstId = DG.DesignationMstId
+            WHERE E.EmpMstId = :EmpMstId
+              AND CAST(P.punchTime AS DATE) BETWEEN :FromDate AND :ToDate
+            ORDER BY AttendanceDate DESC, P.punchTime ASC
+            `,
+            { replacements, type: QueryTypes.SELECT }
+        );
+
+        const groupedMap = {};
+        for (const row of rawData) {
+            const key = `${row.EmpMstId}_${row.AttendanceDate}`;
+
+            if (!groupedMap[key]) {
+                groupedMap[key] = {
+                    EmpMstId: row.EmpMstId,
+                    empCode: row.EmpCode,
+                    empName: row.EmpFullName,
+                    department: row.Department,
+                    designation: row.Designation,
+                    attendanceDate: row.AttendanceDate,
+                    punches: [],
+                };
+            }
+
+            const current = groupedMap[key];
+
+            if (row.punchType === "IN") {
+                current.punches.push({
+                    inSyncTrackerId: row.SyncTrackerId,
+                    inPunchId: row.id,
+                    in: row.PunchTime,
+                    outPunchId: null,
+                    out: null,
+                    source: row.punchSource,
+                });
+            } else if (row.punchType === "OUT") {
+                const openSession = current.punches.find((p) => p.in && !p.out);
+                if (openSession) {
+                    openSession.outSyncTrackerId = row.SyncTrackerId;
+                    openSession.outPunchId = row.id;
+                    openSession.out = row.PunchTime;
+                } else {
+                    current.punches.push({
+                        inPunchId: null,
+                        in: null,
+                        outSyncTrackerId: row.SyncTrackerId,
+                        outPunchId: row.id,
+                        out: row.PunchTime,
+                        source: row.punchSource,
+                    });
+                }
+            }
+        }
+
+        let result = Object.values(groupedMap);
+
+        if (limit && limit > 0) {
+            result = result.slice(0, limit);
+        }
+
+        res.status(200).json({
+            success: true,
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+};
 
 exports.getPunchLogs = async (req, res, next) => {
   const { EmpCode, DepartmentMstId, CompanyMstId, FromDate, ToDate } =
